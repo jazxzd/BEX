@@ -356,7 +356,7 @@ The capability identifiers below define the controlled vocabulary. Approval stat
 | `groups.read` | Read group metadata within authorized scope |
 | `groups.manage` | Create and administer groups linked to an explicitly assigned department |
 | `groups.members.manage` | Add or remove group participants |
-| `devices.read` | Consult registered devices and sessions |
+| `devices.read` | Proposed consultation of registered devices only; exact returned fields remain to be defined |
 | `devices.manage` | Proposed device-specific management operation(s), to be defined; no session revocation approved |
 | `audit.read` | Consult administrative audit records |
 | `conversations.exceptional_read` | Perform an exceptional administrative conversation consultation |
