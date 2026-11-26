@@ -1,76 +1,85 @@
-# IT operational support — scoped access design
+# IT operational support — scoped device access design
 
-Status: architecture proposal for review; not an approved physical schema or migration. Related decisions: PO-approved three equivalent chief administrators; least-privilege access for other IT personnel. This document does not authorize SQL execution, account provisioning, or deployment.
+Status: proposed architecture choices recorded from the PO on 26/11/2026; pending technical review. These choices are not an approved physical schema, migration, or implementation authorization.
 
-## 1. Purpose
+## 1. Proposed choices
 
-Define constrained operational-support capability for IT personnel who are not one of the three platform chief administrators. IT team membership alone grants no access. A person receives the it_support category only when an authorized assignment exists and is active.
+| Topic | PO choice | Architectural interpretation |
+|---|---|---|
+| Support tickets/cases | No | A ticket/case is not a prerequisite. Do not create a ticket table or ticket foreign key solely for this workflow. |
+| Scope | Devices | First design is limited to device-related support. Session revocation, general account assistance, messages, files, call content, and conversation history are excluded unless separately approved. |
+| Duration | 8 hours | Each grant is valid for at most eight hours from its start. Expiry is enforced server-side; early revocation is allowed. |
 
-## 2. Security invariants
+The exact device operations (e.g. viewing registered-device metadata and/or revoking a device) still require technical and privacy review before schema/API design. These are proposed architectural choices, not a final capability catalogue.
+
+## 2. Purpose and assignment model
+
+IT team membership alone grants no support access. A person receives scoped support access only through an explicit, active, server-managed assignment.
+
+Without a ticket workflow, an assignment must not depend on a ticket/case record. The logical scope should identify at minimum the support agent, organization, target user, device scope, allowed capabilities, justification, grantor, start time, expiry time, status, and revocation metadata.
+
+## 3. Security invariants
 
 1. Support access is deny-by-default and server-authorized.
-2. Every support action is tied to one active support case/ticket, one organization, and one explicitly identified target user or resource.
+2. Each assignment is restricted to one organization, one explicitly identified target user, and device-related resources within that scope. Whether one assignment can cover multiple devices remains to be decided; default to the narrowest scope.
 3. A non-empty justification is required and persisted before access is granted.
-4. The support agent must be authenticated, active, and assigned to the case.
-5. The target user must be active and belong to the organization recorded on the case; cross-organization access is denied.
-6. Scope is limited to explicitly approved operational functions. Session/device access assistance are candidates, not yet approved capabilities. No message bodies, files, call content, or private conversation history.
-7. No support assignment grants role management, organization administration, department administration outside existing department-scoped capabilities, or unrestricted audit-history access.
-8. Every grant, access, mutation, denial, revocation, and expiry is recorded in the central audit mechanism planned by Issue #97.
-9. Access ends when the case is closed, assignment revoked, support agent deactivated, target user deactivated, or assignment expires, whichever occurs first.
-10. Client-provided organization, user, ticket, role, or scope values are untrusted. Server derives and verifies them from persisted records.
+4. The support agent must be authenticated, active, and explicitly assigned.
+5. The target user must be active and belong to the organization in the assignment; cross-organization access is denied.
+6. The grant expires no later than eight hours after its start. Server-side checks reject access after expiry even if the client remains open. Revocation, agent deactivation, or target-user deactivation ends access earlier.
+7. Only device-related capabilities may be granted. The allowlist is closed and server-defined; client input cannot expand it.
+8. No message bodies, attachments, call content, private conversation history, unrestricted audit history, role management, organization administration, or department administration is included.
+9. Every grant, access, mutation, denial, revocation, and expiry is recorded in the central audit mechanism planned by Issue #97.
+10. Client-provided organization, user, device, role, or scope values are untrusted. The server derives and verifies them from persisted records.
 
-## 3. Logical data model (not executable SQL)
+## 4. Logical data model (not executable SQL)
 
-A future support-assignment record should capture: immutable assignment identifier; support agent identity; support case/ticket reference; organization identity; target user identity; permitted capabilities from a closed server-defined allowlist; mandatory justification; status and creation timestamp; creator/approver identity; start and expiry times; revocation timestamp and revoker identity; and case closure state.
+A future support-assignment record should capture: immutable assignment identifier; support agent identity; organization identity; target user identity; optional specific device identifier or explicit bounded device scope; permitted capabilities from a closed server-defined allowlist; mandatory justification; status and creation timestamp; grantor identity; start and expiry times (maximum eight-hour interval); revocation timestamp and revoker identity.
 
-The canonical ticket/case table and identifier must be established before designing a foreign key. Do not invent a parallel ticket table. If ticket-based support is not approved as a product workflow, return to the PO rather than weakening the case requirement.
+Do not add ticket/case identifiers or a ticket table for this workflow. Identify the canonical device registry and ownership relationship before designing device foreign keys. Do not invent a parallel device registry if BEX already has a canonical source.
 
-## 4. Authorization flow
+## 5. Authorization flow
 
 1. Support agent authenticates.
-2. Server receives requested operation and case reference.
-3. Server loads case and assignment from trusted database records.
-4. Server verifies agent assignment, active status, organization match, target-user membership/status, allowed capability, validity window, and justification.
-5. Server performs only the requested allowlisted operation.
-6. Server writes central audit event with actor, case, organization, target, capability, outcome, timestamp, and reason.
+2. Server receives requested device operation and target context.
+3. Server loads the active assignment and device ownership from trusted database records.
+4. Server verifies agent assignment, active status, organization match, target-user membership/status, device ownership, allowlisted capability, validity window, and justification.
+5. Server performs only the requested allowlisted device operation.
+6. Server writes a central audit event with actor, organization, target user, device/resource, capability, outcome, timestamp, and reason.
 7. Failed checks deny the operation and are audited where safe.
 
-Browser must never write support assignments or choose capabilities. Use server-side RPCs with explicit grants and narrowly scoped execution. Any SECURITY DEFINER function must pin a safe search_path, validate auth.uid(), check all scope constraints, and revoke execution from PUBLIC/unauthorized roles.
+Browser must never create support assignments or choose capabilities. Use server-side RPCs with explicit grants and narrowly scoped execution. Any SECURITY DEFINER function must pin a safe search_path, validate auth.uid(), check all scope constraints, and revoke execution from PUBLIC/unauthorized roles.
 
-## 5. Relationship to existing roles
+## 6. Role relationship
 
 | Category | Authority |
 |---|---|
 | platform_admin | Three equivalent chief administrators; platform administration under approved capability rules |
-| it_support | Case-scoped operational support only; no implicit platform governance |
+| it_support | Explicitly assigned, time-limited device support only; no implicit platform governance |
 | collaborator | Ordinary organization-user capabilities |
 | Department manager | Existing department-scoped capabilities, separate from platform and support administration |
 
-An IT employee without an active support assignment remains a normal collaborator. The platform_users table must not be broadened into a generic support-assignment table.
+An IT employee without an active support assignment remains a normal collaborator. Do not broaden public.platform_users into a generic support-assignment table.
 
-## 6. Required tests
+## 7. Required tests
 
-- Assigned agent can perform only the capability on the active case.
-- Agent cannot access another organization or target user.
-- Agent cannot act without case reference, active assignment, justification, or within an invalid time window.
-- Closed, revoked, or expired case denies further access immediately.
-- Deactivated agent or target user denies access.
+- Assigned agent can perform only an allowlisted device capability within the active assignment.
+- Agent cannot access another organization, target user, or out-of-scope device.
+- Agent cannot act without an active assignment, non-empty justification, or outside the valid time window.
+- Access is denied immediately after revocation, agent/target deactivation, or eight-hour expiry.
+- Client-supplied organization, target, device, or capability manipulation cannot bypass server validation.
 - Ordinary collaborator cannot create or elevate an assignment.
 - it_support cannot invoke platform-admin department RPCs, role-management functions, or organization administration.
 - Support agent cannot read message bodies, attachments, call content, or conversation history.
-- Manipulating client-supplied case, organization, target, or capability values cannot bypass server validation.
 - Every successful mutation and security-relevant denial produces the expected central audit event.
 - Cross-tenant and privilege-escalation tests pass under authenticated and anonymous roles.
 
-## 7. Decisions required before physical schema
+## 8. Remaining decisions and implementation gates
 
-- Confirm whether product will provide a support-ticket/case workflow and identify its canonical entity.
-- Confirm first-release operational actions; session revocation and device/account access assistance are candidates, not approved scope.
-- Define who may create, assign, approve, and close a case; a support agent must not self-approve elevated access to their own target.
-- Define maximum assignment duration and renewal approval.
-- Reconcile six-month initial PO retention rule with category-specific retention in ADR-001 before implementing deletion.
-- Define whether a case covers one target user or a bounded set of resources.
+- Confirm exact device operations allowed in the first release (read-only device inventory, revoke/remove a registered device, or both).
+- Identify the canonical device registry and ownership model already present or planned in BEX.
+- Define who may grant, revoke, and renew support assignments; prevent self-grant and self-elevation. Renewal must create a new auditable authorization and remain subject to the eight-hour maximum per grant.
+- Define whether an assignment covers one device or all devices belonging to one target user. Until decided, use least privilege and avoid broad access.
+- Reconcile the six-month initial PO retention rule with category-specific retention in ADR-001 before implementing deletion.
+- Confirm audit-event fields and integration with Issue #97.
 
-## 8. Implementation gate
-
-Do not add SQL migrations until the product decisions and canonical support-case model are approved. Then implement schema and RPCs in a new incremental migration, integrate Issue #97 audit events, add positive/negative/cross-tenant tests, and validate on the empty BEX development project. Do not execute migrations against production as part of this proposal.
+Do not add SQL migrations until the canonical device model, exact allowlist, assignment governance, and audit integration have been reviewed. Then implement schema/RPCs in a new incremental migration and add positive, negative, expiry, revocation, and cross-tenant tests. Validate on BEX DEV; no production execution is authorized by this proposal.
