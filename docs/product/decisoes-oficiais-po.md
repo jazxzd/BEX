@@ -15,7 +15,8 @@ As escolhas abaixo foram fornecidas pela PO para orientar a arquitetura do BEX. 
 
 - Chamados: não será obrigatório abrir ou vincular chamado para conceder suporte operacional.
 - Escopo inicial: suporte relacionado a dispositivos (`devices`). Não inclui automaticamente suporte a sessões, gestão geral de contas ou acesso a conteúdo de conversas.
-- Duração: cada autorização de suporte terá validade máxima de 8 horas, com expiração verificada no servidor e possibilidade de revogação antecipada.
+- Duração: cada autorização de suporte terá validade máxima de 8 horas, com expiração verificada no servidor e possibilidade de revogação antecipada exclusivamente por um dos três administradores chefes de TI, que possuem autoridade equivalente.
+- Revogação: integrantes de TI com permissões operacionais inferiores (`it_support`) não podem revogar, suspender, encurtar ou invalidar autorizações de suporte. A permissão deve ser validada no servidor e cada revogação deve gerar evento de auditoria com administrador responsável, autorização afetada, data/hora e justificativa.
 - Acesso por atribuição explícita, com justificativa obrigatória, escopo de organização e usuário-alvo, capacidades permitidas por lista fechada e registro de auditoria.
 - A associação à equipe de TI, por si só, não concede `it_support`; sem atribuição ativa, a pessoa mantém permissões comuns de colaborador.
 - Mensagens, anexos, chamadas, histórico privado, gestão de papéis e administração global ficam fora desse escopo.
@@ -51,7 +52,7 @@ Ainda precisam de revisão: operações exatas sobre dispositivos, identificaç�
 - Sem duração máxima predefinida; limites operacionais de inatividade, infraestrutura e falhas ainda precisam ser definidos.
 
 ## Pendências explícitas
-- Detalhar a matriz de capacidades operacionais e o fluxo de concessão/revogação do suporte a dispositivos; as escolhas acima são propostas arquiteturais, não autorização para implementar.
+- Detalhar a matriz de capacidades operacionais e o fluxo de concessão/renovação do suporte a dispositivos; a revogação foi definida como exclusiva dos três administradores chefes. As escolhas acima são propostas arquiteturais, não autorização para implementar.
 - Definir categorias de dados e exceções sujeitas à retenção de seis meses.
 - Definir limites de inatividade e encerramento operacional das chamadas.
 - Validar tecnicamente chamadas de grupo com até 50 participantes.
