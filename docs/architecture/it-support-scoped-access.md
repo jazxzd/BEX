@@ -8,7 +8,7 @@ Status: proposed architecture choices recorded from the PO on 26/11/2026; pendin
 |---|---|---|
 | Support tickets/cases | No | A ticket/case is not a prerequisite. Do not create a ticket table or ticket foreign key solely for this workflow. |
 | Scope | Devices | First design is limited to device-related support. Session revocation, general account assistance, messages, files, call content, and conversation history are excluded unless separately approved. |
-| Duration | 8 hours | Each grant is valid for at most eight hours from its start. Expiry is enforced server-side; early revocation is allowed. |
+| Duration | 8 hours | Each grant is valid for at most eight hours from its start. Expiry is enforced server-side; early revocation is allowed only by one of the three equivalent chief IT administrators. |
 
 The exact device operations (e.g. viewing registered-device metadata and/or revoking a device) still require technical and privacy review before schema/API design. These are proposed architectural choices, not a final capability catalogue.
 
@@ -25,15 +25,16 @@ Without a ticket workflow, an assignment must not depend on a ticket/case record
 3. A non-empty justification is required and persisted before access is granted.
 4. The support agent must be authenticated, active, and explicitly assigned.
 5. The target user must be active and belong to the organization in the assignment; cross-organization access is denied.
-6. The grant expires no later than eight hours after its start. Server-side checks reject access after expiry even if the client remains open. Revocation, agent deactivation, or target-user deactivation ends access earlier.
-7. Only device-related capabilities may be granted. The allowlist is closed and server-defined; client input cannot expand it.
-8. No message bodies, attachments, call content, private conversation history, unrestricted audit history, role management, organization administration, or department administration is included.
-9. Every grant, access, mutation, denial, revocation, and expiry is recorded in the central audit mechanism planned by Issue #97.
-10. Client-provided organization, user, device, role, or scope values are untrusted. The server derives and verifies them from persisted records.
+6. The grant expires no later than eight hours after its start. Server-side checks reject access after expiry even if the client remains open. Revocation by one of the three equivalent chief IT administrators, agent deactivation, or target-user deactivation ends access earlier.
+7. Only the three `platform_admin` chief IT administrators, with equivalent authority, may revoke an active support assignment. An `it_support` agent or any other lower-privilege TI member cannot revoke, shorten, suspend, or otherwise invalidate an assignment. Revocation must be server-authorized and audited with the acting administrator, target assignment, timestamp, and reason.
+8. Only device-related capabilities may be granted. The allowlist is closed and server-defined; client input cannot expand it.
+9. No message bodies, attachments, call content, private conversation history, unrestricted audit history, role management, organization administration, or department administration is included.
+10. Every grant, access, mutation, denial, revocation, and expiry is recorded in the central audit mechanism planned by Issue #97.
+11. Client-provided organization, user, device, role, or scope values are untrusted. The server derives and verifies them from persisted records.
 
 ## 4. Logical data model (not executable SQL)
 
-A future support-assignment record should capture: immutable assignment identifier; support agent identity; organization identity; target user identity; optional specific device identifier or explicit bounded device scope; permitted capabilities from a closed server-defined allowlist; mandatory justification; status and creation timestamp; grantor identity; start and expiry times (maximum eight-hour interval); revocation timestamp and revoker identity.
+A future support-assignment record should capture: immutable assignment identifier; support agent identity; organization identity; target user identity; optional specific device identifier or explicit bounded device scope; permitted capabilities from a closed server-defined allowlist; mandatory justification; status and creation timestamp; grantor identity; start and expiry times (maximum eight-hour interval); revocation timestamp and revoker identity. The revoker must be one of the three equivalent chief IT administrators; this must be enforced server-side, not only by hiding a client control.
 
 Do not add ticket/case identifiers or a ticket table for this workflow. Identify the canonical device registry and ownership relationship before designing device foreign keys. Do not invent a parallel device registry if BEX already has a canonical source.
 
@@ -65,6 +66,8 @@ An IT employee without an active support assignment remains a normal collaborato
 - Assigned agent can perform only an allowlisted device capability within the active assignment.
 - Agent cannot access another organization, target user, or out-of-scope device.
 - Agent cannot act without an active assignment, non-empty justification, or outside the valid time window.
+- `it_support` and other lower-privilege TI members cannot revoke, suspend, shorten, or invalidate support assignments.
+- Each of the three equivalent chief IT administrators can revoke an active assignment; the operation is denied to all other roles and always audited.
 - Access is denied immediately after revocation, agent/target deactivation, or eight-hour expiry.
 - Client-supplied organization, target, device, or capability manipulation cannot bypass server validation.
 - Ordinary collaborator cannot create or elevate an assignment.
@@ -77,7 +80,7 @@ An IT employee without an active support assignment remains a normal collaborato
 
 - Confirm exact device operations allowed in the first release (read-only device inventory, revoke/remove a registered device, or both).
 - Identify the canonical device registry and ownership model already present or planned in BEX.
-- Define who may grant, revoke, and renew support assignments; prevent self-grant and self-elevation. Renewal must create a new auditable authorization and remain subject to the eight-hour maximum per grant.
+- Define who may grant and renew support assignments; prevent self-grant and self-elevation. Revocation authority is decided: only the three equivalent chief IT administrators may revoke. Renewal must create a new auditable authorization and remain subject to the eight-hour maximum per grant.
 - Define whether an assignment covers one device or all devices belonging to one target user. Until decided, use least privilege and avoid broad access.
 - Reconcile the six-month initial PO retention rule with category-specific retention in ADR-001 before implementing deletion.
 - Confirm audit-event fields and integration with Issue #97.
