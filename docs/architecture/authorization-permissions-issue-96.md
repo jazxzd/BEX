@@ -30,6 +30,29 @@ The product owner approved the following high-level structure for Issue #96:
 
 A department manager is therefore not a separate global platform role. Department-manager authority is represented by department-scoped capabilities assigned explicitly to a collaborator. The product owner approved that a department manager may consult information about their own department, manage membership of their own department, and create/administer groups linked to their own department. They must not access other departments, administer organizations, or manage global permissions. These capabilities are scoped to the department(s) assigned to the collaborator; they do not create cross-department or platform-wide authority.
 
+
+## 2.2 Approved IT administration topology — three equivalent chiefs
+
+The product owner explicitly confirmed on 26/11/2026 that the IT administration team has **exactly three chief administrators with equivalent administrative authority**. There is no single primary chief and no primary/deputy hierarchy among these three identities. The arrangement is intended to preserve administrative continuity when one chief is absent.
+
+- Each of the three chief administrators is represented by the same `platform_admin` role and the same approved platform-administration capability set. Authorization must not depend on which of the three identities acts.
+- The three seats are an organizational governance rule, not a database authorization shortcut. The database must authorize an authenticated identity through a controlled, server-managed assignment; it must never infer chief status from email, account creation order, row count, client metadata, or a user-supplied role.
+- The remaining IT personnel do **not** receive `platform_admin` by virtue of belonging to IT. Where their assigned duties require operational support, they receive only the `it_support` category and its ticket-, organization-, target-user-, and justification-scoped capabilities defined in section 2.1. IT personnel without those support duties remain ordinary `collaborator` users with no implicit privileged access.
+- `it_support` does not inherit the chiefs' platform governance, role-management, organization-administration, complete audit-history, or exceptional conversation-reading powers.
+- Absence of one chief does not elevate another chief's authority: all three already have equivalent authority. No quorum, dual approval, or co-signature is introduced for ordinary `platform_admin` actions by this decision. Existing separately approved dual-approval requirements for exceptional conversation access remain unchanged.
+- Appointment, removal, and replacement of a chief administrator must be performed through a controlled, server-side administrative process with identity verification, separation of duties, and an immutable audit event. A chief must not grant or elevate their own role. The exact appointing authority and replacement workflow remain an implementation/governance detail to be specified; this decision does not authorize self-service role assignment.
+- The organizational target is to maintain three active chief-administrator assignments. Temporary absence does not reduce the authority of the remaining chiefs. If a seat becomes vacant, the controlled replacement process must restore the three-seat arrangement; the application must not silently promote an `it_support` user.
+
+### Schema and migration consequence
+
+The current `20261107201938_create_platform_users.sql` migration constrains `platform_users.role` to `platform_admin` only. That constraint does **not** prevent three administrators: the table's `user_id` primary key permits three distinct identities, each assigned the same role. Therefore, the approved three-chief arrangement does not require a new role value or a cardinality constraint in that table.
+
+However, the current table does not represent `it_support` assignments. Before implementing operational support permissions, the architecture must decide whether those assignments belong in a separate support-assignment table (recommended when organization/ticket scope and lifecycle must be represented) or in an explicitly redesigned role-assignment model. Do not broaden the `platform_users` CHECK constraint or grant `it_support` platform-wide semantics merely to make the category fit.
+
+The existing department RPCs that check `platform_users.role = 'platform_admin'` will consequently authorize all three chief administrators equally once their three assignments are provisioned. They will **not** authorize other IT personnel. Department-scoped collaborator capabilities remain a separate, least-privilege path and must not be conflated with `platform_admin`.
+
+This decision is a product/architecture clarification only. It does not create accounts, change role assignments, modify SQL migrations, or authorize execution against Supabase.
+
 ## 3. Authorization principles
 
 1. Deny by default. Missing identity, missing role, missing permission, invalid scope, or authorization lookup errors result in denial.
