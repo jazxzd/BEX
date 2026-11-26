@@ -7,7 +7,7 @@ Este documento consolida decisões funcionais aprovadas pela Product Owner. Quan
 - Referências de experiência: WhatsApp, Discord e Microsoft Teams, sem reprodução literal de produto concorrente.
 - Login próprio com usuário e senha; contas cadastradas pela TI.
 - Solicitação de redefinição de senha encaminhada à TI responsável, que fornece a nova senha.
-- Estrutura de TI com três administradores chefes principais e demais integrantes com permissões inferiores.
+- Estrutura de TI com exatamente três administradores chefes principais, com autoridade administrativa equivalente entre si e sem hierarquia de chefe principal/substituto. Os demais integrantes da TI recebem permissões inferiores, limitadas às funções operacionais necessárias; não herdam autoridade de `platform_admin`.
 
 ## Mensagens e colaboração
 - Conversas individuais e em grupo.
@@ -38,7 +38,7 @@ Este documento consolida decisões funcionais aprovadas pela Product Owner. Quan
 - Sem duração máxima predefinida; limites operacionais de inatividade, infraestrutura e falhas ainda precisam ser definidos.
 
 ## Pendências explícitas
-- Definir matriz completa de permissões da equipe de TI.
+- Detalhar a matriz de capacidades operacionais dos integrantes de TI que não são administradores chefes; a equivalência de autoridade dos três chefes já está aprovada.
 - Definir categorias de dados e exceções sujeitas à retenção de seis meses.
 - Definir limites de inatividade e encerramento operacional das chamadas.
 - Validar tecnicamente chamadas de grupo com até 50 participantes.
