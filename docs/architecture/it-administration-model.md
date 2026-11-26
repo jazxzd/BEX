@@ -1,63 +1,62 @@
 # IT administration model — three equivalent chiefs
 
-Status: product decision approved by the PO on 26/11/2026; architecture clarification prepared for review. This document defines the approved topology and implementation constraints. It does not authorize database migration execution, account provisioning, or production deployment.
+Status: product decision approved by the PO on 26/11/2026; architecture clarification prepared for review. This document does not authorize migrations, account provisioning, or production deployment.
 
 ## 1. Approved organizational model
 
-The IT administration team has exactly three chief administrators. All three have equivalent administrative authority and use the same `platform_admin` role/capability set. There is no single primary chief, deputy hierarchy, or automatic elevation based on absence.
+The IT administration team has exactly three chief administrators. All three have equivalent authority and use the same `platform_admin` role/capability set. There is no primary/deputy hierarchy or automatic elevation based on absence.
 
-The remaining IT personnel receive lower, least-privilege access. They do not become platform administrators simply because they are members of IT.
+Remaining IT personnel receive lower, least-privilege access. IT membership alone does not confer platform-administrator authority.
 
 ## 2. Role and capability boundaries
 
 | Identity category | Role/category | Allowed scope | Explicit exclusions |
 |---|---|---|---|
-| Three chief administrators | `platform_admin` | Platform-level IT administration and governance, according to explicit capabilities and audit controls | No routine or automatic conversation-content access; no bypass of separately approved exceptional-access workflow |
-| IT operational support personnel | `it_support` | Device/session consultation and revocation for the user and organization covered by an active support ticket, with justification and audit | No platform/organization role changes, organization administration, cross-organization access, complete administrative audit history, or routine conversation-content access |
-| Other IT personnel without support assignment | `collaborator` | Ordinary organization-user capabilities only | No implicit IT support or platform-administration privileges |
-| Department manager | `collaborator` plus department-scoped capabilities | Own assigned department(s), membership management, and groups linked to those departments as approved | No other-department access, organization administration, or global permission management |
+| Three chief administrators | `platform_admin` | Platform-level IT administration and governance under explicit capabilities and audit controls | No routine conversation-content access; no bypass of exceptional-access workflow |
+| IT operational support personnel | `it_support` | Proposed: explicit, time-limited device support for one organization and target user, with justification and audit | No role changes, organization administration, cross-organization access, unrestricted audit history, session/account support unless separately approved, or conversation-content access |
+| Other IT personnel without support assignment | `collaborator` | Ordinary organization-user capabilities | No implicit IT support or platform-administration privileges |
+| Department manager | `collaborator` plus department-scoped capabilities | Own assigned departments and approved department-scoped membership/groups | No other-department access, organization administration, or global permission management |
 
-The `it_support` category is not automatically assigned to every employee in IT. It is granted only where operational support duties require it and remains scoped to a validated ticket, organization, and target user.
+The `it_support` category is not automatically assigned to every IT employee. It requires an explicit active assignment restricted to organization, target user, device scope, and authorization window. A support ticket is not required under the PO's proposed choice.
 
 ## 3. Three-chief invariants
 
 1. Maintain three active chief-administrator assignments as the organizational target.
 2. Each chief has the same role and capability set; authorization must not branch on chief identity.
-3. Temporary absence of one chief does not elevate the others; the remaining two already hold equivalent authority.
+3. Temporary absence of one chief does not elevate the others.
 4. No quorum or co-signature is added for ordinary platform-administration operations by this decision.
-5. The separately approved two-party approval workflow for exceptional conversation-content access remains mandatory and unchanged.
-6. Appointment, removal, and replacement use a controlled server-side process, with identity verification, separation of duties, and append-only audit events.
-7. No chief may grant or elevate their own role. No client-side metadata, email address, account age, row count, or user-supplied identifier is proof of chief status.
+5. The separately approved two-party approval workflow for exceptional conversation-content access remains mandatory.
+6. Appointment, removal, and replacement use a controlled server-side process, identity verification, separation of duties, and append-only audit events.
+7. No chief may grant or elevate their own role. Client-side metadata, email, account age, row count, or user-supplied identifiers do not prove chief status.
 8. A vacant seat is restored through the controlled replacement process; an `it_support` member is never silently promoted.
 
-The appointing authority and detailed replacement procedure remain to be specified as governance/implementation details. This document does not invent that authority.
+Appointing authority and replacement procedure remain to be specified; this document does not invent that authority.
 
 ## 4. Current schema impact
 
 The existing `public.platform_users` table uses `user_id` as its primary key and restricts `role` to `platform_admin`.
 
-- This schema can represent three chiefs without a new role value: three distinct `user_id` rows can each have `role = 'platform_admin'`.
-- The current role CHECK does not itself enforce that exactly three assignments exist. The three-seat invariant therefore requires a controlled provisioning/governance workflow and an auditable operational check, not a client-writable count constraint.
-- The current table does not represent `it_support` assignments. Do not broaden its CHECK constraint or treat support as a platform-wide role without a separate scoped assignment design.
-- Recommended next design: a separate support-assignment relation for `it_support`, with explicit organization scope, assignment lifecycle, and audit linkage to support tickets. Final physical schema remains subject to review.
-- Existing department RPCs that check `platform_users.role = 'platform_admin'` will treat all three chiefs equally once their assignments exist. They will not authorize `it_support` or ordinary collaborators.
+- Three distinct `user_id` rows can each have `role = 'platform_admin'`; no new role value is needed for the three chiefs.
+- The current role CHECK does not enforce exactly three assignments. This requires controlled provisioning/governance and an auditable operational check.
+- The current table does not represent `it_support` assignments. Do not broaden its CHECK constraint or make support a platform-wide role.
+- Recommended next design: a separate support-assignment relation with organization/target-user scope, device scope, maximum eight-hour validity, lifecycle, justification, and audit linkage. Do not introduce a ticket foreign key for this workflow.
+- Existing department RPCs checking `platform_users.role = 'platform_admin'` will treat all three chiefs equally. They must not authorize `it_support` or ordinary collaborators.
 - Department-scoped collaborator capabilities remain separate from platform administration.
 
 ## 5. Required implementation and test gates
 
-Before any migration or release implementing this model:
-
-- Define the controlled workflow for assigning, revoking, and replacing a chief administrator, including who is authorized to appoint them.
-- Define the support-assignment schema and lifecycle, including organization scope and support-ticket linkage.
-- Ensure role and capability changes are server-side only and audited.
-- Verify that three distinct chief identities receive identical authorized operations.
-- Verify that two chiefs remain fully capable during the third chief's absence.
-- Verify that `it_support` cannot call platform-admin RPCs or change roles.
-- Verify that support operations fail without an active ticket, non-empty justification, valid organization, and in-scope target user.
-- Verify that collaborators and department managers cannot escalate to platform or cross-department authority.
-- Verify that no administrative role grants routine conversation-content access and that exceptional access still requires its separately approved dual-approval workflow.
-- Run positive, negative, cross-tenant, and privilege-escalation tests against the new BEX DEV project before any production authorization.
+Before migration or release:
+- Define controlled assignment, revocation, and replacement of chief administrators, including appointing authority.
+- Identify the canonical device registry and ownership model; define exact permitted device operations.
+- Define who may grant, revoke, and renew support assignments; prevent self-grant and self-elevation.
+- Keep role/capability changes server-side and audited.
+- Verify support grants enforce organization, target user, device scope, allowlisted capabilities, justification, and maximum eight-hour validity.
+- Verify all three chief identities receive identical authorized operations and two remain fully capable during the third's absence.
+- Verify `it_support` cannot call platform-admin RPCs or change roles.
+- Verify collaborators and department managers cannot escalate privileges.
+- Preserve the dual-approval workflow for exceptional conversation-content access.
+- Run positive, negative, expiry, revocation, cross-tenant, and privilege-escalation tests against BEX DEV.
 
 ## 6. Change boundary
 
-This is a documentation-only architectural clarification. It does not modify SQL migrations, create or modify user accounts, change Supabase data, alter Vercel configuration, or authorize deployment. SQL changes, if required after the support-assignment design is completed, must be delivered as reviewed incremental migrations and a separate approval gate.
+Documentation-only clarification. No SQL migrations, accounts, Supabase data, Vercel configuration, or deployments are changed or authorized. Any SQL changes must be reviewed incremental migrations with a separate approval gate.
