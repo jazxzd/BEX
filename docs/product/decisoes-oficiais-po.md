@@ -14,14 +14,15 @@ Este documento consolida decisões funcionais aprovadas pela Product Owner. Quan
 As escolhas abaixo foram fornecidas pela PO para orientar a arquitetura do BEX. Permanecem como propostas arquiteturais sujeitas à revisão técnica, detalhamento das capacidades e aprovação antes da implementação física.
 
 - Chamados: não será obrigatório abrir ou vincular chamado para conceder suporte operacional.
-- Escopo inicial: suporte relacionado a dispositivos (`devices`). Não inclui automaticamente suporte a sessões, gestão geral de contas ou acesso a conteúdo de conversas.
+- Escopo inicial: suporte relacionado a dispositivos (`devices`), incluindo consulta dos dispositivos cadastrados e revogação/remoção de um dispositivo cadastrado. Não inclui suporte a sessões, gestão geral de contas ou acesso a conteúdo de conversas.
+- Granularidade: cada autorização será vinculada a um único dispositivo específico. Para atuar em outro dispositivo, será necessária uma autorização separada.
 - Duração: cada autorização de suporte terá validade máxima de 8 horas, com expiração verificada no servidor e possibilidade de revogação antecipada exclusivamente por um dos três administradores chefes de TI, que possuem autoridade equivalente.
-- Revogação: integrantes de TI com permissões operacionais inferiores (`it_support`) não podem revogar, suspender, encurtar ou invalidar autorizações de suporte. A permissão deve ser validada no servidor e cada revogação deve gerar evento de auditoria com administrador responsável, autorização afetada, data/hora e justificativa.
+- Governança: somente os três administradores chefes de TI, com autoridade equivalente, podem conceder, renovar ou revogar autorizações de suporte. Integrantes de TI com permissões operacionais inferiores (`it_support`) não podem criar, renovar, revogar, suspender, encurtar ou invalidar autorizações. A permissão deve ser validada no servidor e cada operação deve gerar evento de auditoria com administrador responsável, autorização afetada, data/hora e justificativa. Auto concessão/elevação é proibida.
 - Acesso por atribuição explícita, com justificativa obrigatória, escopo de organização e usuário-alvo, capacidades permitidas por lista fechada e registro de auditoria.
 - A associação à equipe de TI, por si só, não concede `it_support`; sem atribuição ativa, a pessoa mantém permissões comuns de colaborador.
 - Mensagens, anexos, chamadas, histórico privado, gestão de papéis e administração global ficam fora desse escopo.
 
-Ainda precisam de revisão: operações exatas sobre dispositivos, identificação do cadastro canônico de dispositivos, se a atribuição cobre um ou vários dispositivos, quem concede/revoga/renova a autorização e os eventos/campos de auditoria. Não criar tabela de chamados nem FK de chamado para esse fluxo.
+Ainda precisam de revisão técnica: identificação do cadastro canônico de dispositivos, semântica e salvaguardas da consulta e revogação/remoção, e eventos/campos de auditoria. Não criar tabela de chamados nem FK de chamado para esse fluxo.
 
 ## Mensagens e colaboração
 - Conversas individuais e em grupo.
@@ -52,7 +53,7 @@ Ainda precisam de revisão: operações exatas sobre dispositivos, identificaç�
 - Sem duração máxima predefinida; limites operacionais de inatividade, infraestrutura e falhas ainda precisam ser definidos.
 
 ## Pendências explícitas
-- Detalhar a matriz de capacidades operacionais e o fluxo de concessão/renovação do suporte a dispositivos; a revogação foi definida como exclusiva dos três administradores chefes. As escolhas acima são propostas arquiteturais, não autorização para implementar.
+- Detalhar tecnicamente a matriz de capacidades operacionais e o fluxo de concessão/renovação/revogação do suporte a dispositivos, respeitando as autoridades já definidas. As escolhas acima são propostas arquiteturais, não autorização para implementar.
 - Definir categorias de dados e exceções sujeitas à retenção de seis meses.
 - Definir limites de inatividade e encerramento operacional das chamadas.
 - Validar tecnicamente chamadas de grupo com até 50 participantes.
