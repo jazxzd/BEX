@@ -9,6 +9,19 @@ Este documento consolida decisões funcionais aprovadas pela Product Owner. Quan
 - Solicitação de redefinição de senha encaminhada à TI responsável, que fornece a nova senha.
 - Estrutura de TI com exatamente três administradores chefes principais, com autoridade administrativa equivalente entre si e sem hierarquia de chefe principal/substituto. Os demais integrantes da TI recebem permissões inferiores, limitadas às funções operacionais necessárias; não herdam autoridade de `platform_admin`.
 
+## Suporte operacional da TI — propostas para arquitetura (26/11/2026)
+
+As escolhas abaixo foram fornecidas pela PO para orientar a arquitetura do BEX. Permanecem como propostas arquiteturais sujeitas à revisão técnica, detalhamento das capacidades e aprovação antes da implementação física.
+
+- Chamados: não será obrigatório abrir ou vincular chamado para conceder suporte operacional.
+- Escopo inicial: suporte relacionado a dispositivos (`devices`). Não inclui automaticamente suporte a sessões, gestão geral de contas ou acesso a conteúdo de conversas.
+- Duração: cada autorização de suporte terá validade máxima de 8 horas, com expiração verificada no servidor e possibilidade de revogação antecipada.
+- Acesso por atribuição explícita, com justificativa obrigatória, escopo de organização e usuário-alvo, capacidades permitidas por lista fechada e registro de auditoria.
+- A associação à equipe de TI, por si só, não concede `it_support`; sem atribuição ativa, a pessoa mantém permissões comuns de colaborador.
+- Mensagens, anexos, chamadas, histórico privado, gestão de papéis e administração global ficam fora desse escopo.
+
+Ainda precisam de revisão: operações exatas sobre dispositivos, identificação do cadastro canônico de dispositivos, se a atribuição cobre um ou vários dispositivos, quem concede/revoga/renova a autorização e os eventos/campos de auditoria. Não criar tabela de chamados nem FK de chamado para esse fluxo.
+
 ## Mensagens e colaboração
 - Conversas individuais e em grupo.
 - Edição de mensagem própria por até 15 minutos após o envio.
@@ -38,7 +51,7 @@ Este documento consolida decisões funcionais aprovadas pela Product Owner. Quan
 - Sem duração máxima predefinida; limites operacionais de inatividade, infraestrutura e falhas ainda precisam ser definidos.
 
 ## Pendências explícitas
-- Detalhar a matriz de capacidades operacionais dos integrantes de TI que não são administradores chefes; a equivalência de autoridade dos três chefes já está aprovada.
+- Detalhar a matriz de capacidades operacionais e o fluxo de concessão/revogação do suporte a dispositivos; as escolhas acima são propostas arquiteturais, não autorização para implementar.
 - Definir categorias de dados e exceções sujeitas à retenção de seis meses.
 - Definir limites de inatividade e encerramento operacional das chamadas.
 - Validar tecnicamente chamadas de grupo com até 50 participantes.
