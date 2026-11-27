@@ -125,3 +125,33 @@ A Issue #3 só deve ser considerada tecnicamente validada quando:
 - a PO aprovar qualquer ajuste ao requisito de não exposição do alias.
 
 Nenhuma alteração de banco, Auth, secrets, Vercel, deploy ou merge é autorizada por este documento.
+
+
+## 9. Direcionamento da PO — alias técnico para contas Beta (26/11/2026)
+
+A PO aprovou adotar um alias de e-mail técnico como identidade interna candidata para as contas de teste, preservando o username como único identificador solicitado na interface.
+
+Mapeamento de teste proposto:
+
+| Username | Alias técnico candidato |
+|---|---|
+| `Lola.beta` | `lola.beta@betatest.test` |
+| `Zabi.beta` | `zabi.beta@betatest.test` |
+
+Regras:
+- O alias é interno e não deve ser solicitado ao colaborador na tela de login.
+- O sufixo `.test` é reservado para testes e não deve ser tratado como domínio de e-mail operacional ou de produção.
+- A aceitação do endereço pelo validador do Supabase Auth ainda precisa ser comprovada no projeto BEX DEV.
+- Como projetos Supabase hospedados exigem confirmação de e-mail por padrão, a prova deve verificar o provisionamento administrativo com confirmação explícita da identidade técnica, sem depender de entrega de e-mail e sem desabilitar globalmente a confirmação como atalho.
+- A implementação deve permanecer server-side para evitar expor credenciais privilegiadas; a prova também deve inspecionar claims, cookies, respostas e tráfego para determinar se o alias fica visível ao navegador.
+- Não criar essas contas no painel manualmente. O provisionamento deverá ocorrer por fluxo administrativo seguro, idempotente e controlado pela TI, após a POC.
+- Não criar tabela, migration, usuário Auth, secret, configuração de projeto ou deploy nesta etapa documental.
+
+Critério adicional da POC:
+1. Confirmar se `lola.beta@betatest.test` e `zabi.beta@betatest.test` são aceitos pelo Supabase Auth.
+2. Confirmar que a criação administrativa pode marcar a identidade técnica como confirmada sem envio de e-mail.
+3. Validar login com username e senha por endpoint server-side e persistência da sessão no fluxo SSR.
+4. Confirmar que o navegador não recebe o alias interno em resposta, claims ou dados acessíveis ao cliente, conforme o requisito aprovado.
+5. Somente depois dos testes, provisionar as duas contas Beta e testar mensagens entre dois dispositivos.
+
+Este direcionamento seleciona a Opção A como candidata para a POC, mas não declara a estratégia tecnicamente aprovada antes da execução dos testes.
