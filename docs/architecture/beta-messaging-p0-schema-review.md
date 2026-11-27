@@ -204,7 +204,7 @@ with check (
 );
 
 -- Menor privilégio: sem UPDATE/DELETE de mensagens no P0.
-revoke all on public.organizations, public.profiles,
+grant usage on schema public to authenticated;\n\nrevoke all on public.organizations, public.profiles,
   public.organization_members, public.conversations,
   public.conversation_members, public.messages
 from anon, authenticated;
