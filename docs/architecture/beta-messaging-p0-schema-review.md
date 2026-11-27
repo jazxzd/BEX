@@ -1,6 +1,6 @@
 # Status de aplicação — 27/11/2026
 
-<badge>APLICADO NO SUPABASE BEX</badge>
+**Status: APLICADO NO SUPABASE BEX**
 
 A PO aprovou a proposta e as migrations abaixo foram aplicadas ao projeto Supabase BEX `nqmwjlulujwwbpnruwyd`. O bloco SQL de rascunho apresentado mais abaixo neste documento é **histórico e não deve ser executado novamente**: a implementação efetiva recebeu ajustes durante a validação, descritos aqui.
 
