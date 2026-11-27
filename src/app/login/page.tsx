@@ -4,7 +4,7 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
   title: "Entrar",
-  description: "Acesse sua conta Connexa.",
+  description: "Acesse sua conta BEX.",
 };
 
 type LoginPageProps = {
@@ -17,9 +17,9 @@ function getSafeRedirectDestination(next?: string) {
   }
 
   try {
-    const destination = new URL(next, "https://connexa.invalid");
+    const destination = new URL(next, "https://bex.invalid");
 
-    if (destination.origin !== "https://connexa.invalid") {
+    if (destination.origin !== "https://bex.invalid") {
       return "/";
     }
 
@@ -37,12 +37,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="auth-page">
       <section className="auth-card" aria-labelledby="login-title">
         <Link className="auth-brand" href="/">
-          Connexa
+          BEX
         </Link>
         <p className="auth-eyebrow">SEU ESPAÇO DE TRABALHO</p>
         <h1 id="login-title">Bem-vindo de volta</h1>
         <p className="auth-description">
-          Entre com seu e-mail e senha para continuar.
+          Entre com seu usuário corporativo e senha para continuar.
         </p>
         {reason === "session-expired" && (
           <p className="auth-notice" role="status">

@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 type LoginFormProps = {
   redirectTo: string;
 };
 
 export function LoginForm({ redirectTo }: LoginFormProps) {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,19 +18,21 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
     setIsSubmitting(true);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ username, password }),
       });
 
-      if (error) {
+      if (!response.ok) {
         setErrorMessage("Não foi possível entrar. Verifique suas credenciais.");
         return;
       }
 
-      // A full navigation lets the server middleware read the persisted
-      // Supabase session cookies before rendering the protected destination.
+      // A navegação completa permite que o middleware leia os cookies SSR
+      // persistidos pelo Route Handler antes de renderizar a área protegida.
       window.location.assign(redirectTo);
     } catch {
       setErrorMessage(
@@ -44,15 +45,19 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      <label htmlFor="email">E-mail</label>
+      <label htmlFor="username">Usuário corporativo</label>
       <input
-        id="email"
-        name="email"
-        type="email"
-        autoComplete="email"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-        placeholder="voce@empresa.com"
+        id="username"
+        name="username"
+        type="text"
+        autoComplete="username"
+        autoCapitalize="none"
+        spellCheck={false}
+        value={username}
+        onChange={(event) => setUsername(event.target.value)}
+        placeholder="Lola.beta"
+        minLength={3}
+        maxLength={40}
         required
       />
 
