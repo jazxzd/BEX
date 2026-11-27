@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeToggle } from "@/components/theme-toggle";
 import "./globals.css";
+import "./beta-messaging.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Connexa — comunicação que aproxima",
-    template: "%s | Connexa",
+    default: "BEX — comunicação que aproxima",
+    template: "%s | BEX",
   },
-  description:
-    "Um espaço de trabalho para conectar pessoas, conversas e equipes.",
-  applicationName: "Connexa",
+  description: "Um espaço de trabalho para conectar pessoas, conversas e equipes.",
+  applicationName: "BEX",
 };
 
 export const viewport: Viewport = {
