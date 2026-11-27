@@ -84,7 +84,7 @@ Proposta de menor privilégio para o Beta: aprovação, rejeição e revogação
 **`device_sessions`**
 - `session_id` — identificador da sessão Auth.
 - `device_id`, `user_id`, `created_at`, `last_seen_at`, `revoked_at`.
-- Uma sessão só pode operar quando estiver vinculada a dispositivo `active), ao titular correto e à organização correta.
+- Uma sessão só pode operar quando estiver vinculada a dispositivo `active`, ao titular correto e à organização correta.
 
 ### 4.4 Invariantes obrigatórias
 
