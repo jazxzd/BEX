@@ -9,6 +9,40 @@ Este documento consolida decisões funcionais aprovadas pela Product Owner. Quan
 - Solicitação de redefinição de senha encaminhada à TI responsável, que fornece a nova senha.
 - Estrutura de TI com exatamente três administradores chefes principais, com autoridade administrativa equivalente entre si e sem hierarquia de chefe principal/substituto. Os demais integrantes da TI recebem permissões inferiores, limitadas às funções operacionais necessárias; não herdam autoridade de `platform_admin`.
 
+
+## Direcionamento do Beta — identidade, dispositivos e mensagens (26/11/2026)
+
+A PO definiu que o objetivo principal do Beta é colocar as mensagens em funcionamento real. As definições abaixo orientam a arquitetura e devem ser implementadas incrementalmente, após revisão técnica. Não autorizam execução de SQL ou alterações no Supabase.
+
+### Identidade e regra de usuário
+- O login visível será um identificador corporativo (username) e senha, por exemplo `Matheus.Torres`.
+- O username será único globalmente no BEX, sem duplicidade entre organizações, e o login será case-insensitive.
+- No Beta, cada conta pertence a exatamente uma organização. O vínculo `organization_members.user_id` permanece único globalmente.
+- Contas são provisionadas pela TI; não haverá auto cadastro.
+- A TI define a senha inicial. Senhas são gerenciadas pelo Supabase Auth e nunca armazenadas em texto puro ou consultáveis por administradores.
+- Redefinição de senha permanece sob responsabilidade da TI.
+- A compatibilidade técnica entre username corporativo e Supabase Auth precisa de prova técnica server-side antes da implementação.
+
+### Limite de dispositivos por login
+- Cada login poderá ter no máximo dois dispositivos cadastrados/ativos no Beta.
+- O primeiro dispositivo será registrado no primeiro acesso autorizado.
+- A entrada do segundo dispositivo exige solicitação e aprovação explícita da TI.
+- Enquanto dois dispositivos estiverem ativos ou reservados por solicitação pendente, um terceiro dispositivo será bloqueado. Para liberar uma vaga, a TI deverá revogar/remover um dos dispositivos existentes.
+- Proposta inicial de governança: somente os três administradores chefes equivalentes aprovam, rejeitam ou revogam dispositivos. Integrantes de TI com permissões inferiores não recebem essa capacidade automaticamente.
+- A autorização do dispositivo controla o acesso à conta; não concede acesso ao conteúdo privado de conversas nem se confunde com suporte operacional.
+
+### Prioridade funcional
+- Prioridade principal do Beta: autenticação, conversas individuais e em grupo, mensagens persistentes, histórico e atualização em tempo real.
+- Funcionalidades avançadas de mensagens serão implementadas após a entrega confiável do fluxo básico.
+- Chamadas, compartilhamento de tela, suporte operacional da TI, auditoria central abrangente e automação de retenção ficam fora da primeira entrega de mensagens.
+
+### Auditoria e retenção no Beta
+- A implementação da auditoria central abrangente está adiada até que o fluxo principal de mensagens esteja estável.
+- A implementação de políticas automatizadas de retenção, exclusão e expurgo também está adiada.
+- Não criar rotinas de purge ou jobs de exclusão nesta fase.
+- As decisões e documentos anteriores sobre auditoria e retenção permanecem preservados para revisão antes de produção. O adiamento não elimina controles básicos de autenticação, RLS, segurança e logs técnicos do provedor.
+- O modelo lógico, prioridades e critérios de aceite estão em [beta-messaging-foundation.md](../architecture/beta-messaging-foundation.md).
+
 ## Suporte operacional da TI — propostas para arquitetura (26/11/2026)
 
 As escolhas abaixo foram fornecidas pela PO para orientar a arquitetura do BEX. Permanecem como propostas arquiteturais sujeitas à revisão técnica, detalhamento das capacidades e aprovação antes da implementação física.
