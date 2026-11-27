@@ -32,7 +32,7 @@ Ainda precisam de revisão técnica: identificação do cadastro canônico de di
 - Reações por emoji.
 - Comentários e respostas encadeadas; qualquer participante pode comentar na modalidade aprovada.
 - Detalhamento de quem visualizou disponível em grupos; não haverá lista detalhada equivalente em conversas individuais.
-- Retenção inicial de seis meses para determinadas categorias de dados; categorias, exceções e descarte seguro ainda precisam de especificação.
+- Retenção inicial de seis meses para determinadas categorias de dados; as categorias ainda não foram delimitadas e nenhum tipo específico de dado deve receber esse prazo por inferência. A matriz de reconciliação está em [data-retention-matrix.md](../architecture/data-retention-matrix.md). As categorias expressamente abrangidas pela ADR-001 permanecem sujeitas à retenção ratificada de cinco anos até que haja decisão explícita e validação aplicável para eventual exceção.
 
 ## Chamadas de áudio e vídeo
 - Chamadas individuais e em grupo no MVP.
