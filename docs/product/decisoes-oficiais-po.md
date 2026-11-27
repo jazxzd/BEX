@@ -54,7 +54,7 @@ Ainda precisam de revisão técnica: identificação do cadastro canônico de di
 
 ## Pendências explícitas
 - Detalhar tecnicamente a matriz de capacidades operacionais e o fluxo de concessão/renovação/revogação do suporte a dispositivos, respeitando as autoridades já definidas. As escolhas acima são propostas arquiteturais, não autorização para implementar.
-- Definir categorias de dados e exceções sujeitas à retenção de seis meses.
+- Delimitar, com decisão explícita da PO, as categorias de dados e exceções sujeitas à retenção de seis meses, reconciliando-as com a [matriz de retenção](../architecture/data-retention-matrix.md), a ADR-001 e a validação jurídica/privacidade aplicável.
 - Definir limites de inatividade e encerramento operacional das chamadas.
 - Validar tecnicamente chamadas de grupo com até 50 participantes.
 - Especificar privacidade, auditoria e acesso ao histórico.
