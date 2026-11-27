@@ -9,8 +9,8 @@
 - [x] Advisors executados. Nenhum alerta de RLS/exposição de tabelas; permanece aviso geral de proteção contra senhas comprometidas desativada.
 - [x] Conectar a interface Next.js ao diretório, conversas diretas, histórico paginado e envio persistente (commit `e36f9ff`).
 - [x] Implementar assinatura Supabase Realtime para INSERT de mensagens, com limpeza de canal e recuperação de histórico ao voltar a conexão.
-- [x] CI concluído: lint, typecheck e build passaram (run [#45924639921](https://github.com/jazxzd/BEX/actions/runs/45924639921)).
-- [x] Preview Vercel criado e deployment concluído para o commit `e36f9ff`.
+- [x] CI concluído no commit atual da PR #8: lint, typecheck e build passaram (run [#45926786491](https://github.com/jazxzd/BEX/actions/runs/45926786491)).
+- [x] Preview Vercel concluído para a branch `feature/beta-messaging-p0`; o status do commit atual está verde no GitHub.
 - [x] Teste funcional Beta aceito pela PO: mensagens funcionais (Lola.beta/Zabi.beta).
 - [ ] Implementar controle definitivo de dispositivos antes da produção.
 
@@ -18,7 +18,7 @@
 
 # BEX Beta — plano de implementação de mensagens P0
 
-Status: fundação de banco aplicada e interface P0 conectada na branch `feature/beta-messaging-p0`. A regra definitiva de dispositivos foi formalmente adiada. O teste manual com duas sessões reais ainda está pendente. Este documento não autoriza novas alterações de schema, merge ou deploy de produção.
+Status: fundação de banco aplicada e interface P0 conectada na branch `feature/beta-messaging-p0`. A PO confirmou o funcionamento das mensagens no Beta com Lola.beta e Zabi.beta. A regra definitiva de dispositivos foi formalmente adiada para antes da produção. Este documento não autoriza novas alterações de schema, merge ou deploy de produção.
 
 ## 1. Diagnóstico confirmado
 
