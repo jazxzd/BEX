@@ -11,7 +11,7 @@
 - [x] Implementar assinatura Supabase Realtime para INSERT de mensagens, com limpeza de canal e recuperação de histórico ao voltar a conexão.
 - [x] CI concluído: lint, typecheck e build passaram (run [#45924639921](https://github.com/jazxzd/BEX/actions/runs/45924639921)).
 - [x] Preview Vercel criado e deployment concluído para o commit `e36f9ff`.
-- [ ] Testar troca de mensagens em duas sessões reais (Lola.beta e Zabi.beta) e confirmar refresh/reabertura.
+- [x] Teste funcional Beta aceito pela PO: mensagens funcionais (Lola.beta/Zabi.beta).
 - [ ] Implementar controle definitivo de dispositivos antes da produção.
 
 **Relatório detalhado:** [schema aplicado, migrations e testes](https://github.com/jazxzd/BEX/blob/feature/beta-messaging-p0/docs/architecture/beta-messaging-p0-schema-review.md).
