@@ -1,6 +1,6 @@
 # BEX Beta — plano de implementação de mensagens P0
 
-Status: plano atualizado na branch `feature/beta-messaging-p0`. A regra de dispositivos foi formalmente adiada para uma etapa posterior do Beta/produção. Este documento não executa SQL, não altera o Supabase e não autoriza merge ou deploy.
+Status: plano atualizado na branch `feature/beta-messaging-p0`. A regra de dispositivos foi formalmente adiada para uma etapa posterior do Beta/produção. A proposta de schema e RLS está em `docs/architecture/beta-messaging-p0-schema-review.md` e aguarda aprovação da PO. Este documento não executa SQL, não altera o Supabase e não autoriza merge ou deploy.
 
 ## 1. Diagnóstico confirmado
 
