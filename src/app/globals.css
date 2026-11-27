@@ -819,3 +819,20 @@ html[data-theme="sunset"] .directory-search:focus-within,
 html[data-theme="sunset"] .directory-filter select:focus-visible {
   outline-color: rgba(233, 160, 82, .7);
 }
+
+
+/* Sunset — guarantee readable message text even when nested components
+   ship their own light-theme text colors. Keep metadata/status accents intact. */
+html[data-theme="sunset"] .bubble :not(.bubble-meta):not(.bubble-meta *) {
+  color: #F5E9DD !important;
+}
+html[data-theme="sunset"] .bubble a {
+  color: #F2B36F !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+html[data-theme="sunset"] .bubble-meta,
+html[data-theme="sunset"] .bubble-meta *,
+html[data-theme="sunset"] .bubble .local-message-status {
+  color: #E9A052 !important;
+}
