@@ -171,12 +171,17 @@ export function BetaMessagingWorkspace() {
     return () => { cancelled = true; };
   }, [loadInbox, router, supabase]);
 
-  useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+  useEffect(() => {
+    activeIdRef.current = activeId;
+    setOlderLoading(false);
+    setHasOlder(false);
+  }, [activeId]);
   useEffect(() => { inboxRef.current = inbox; }, [inbox]);
 
   useEffect(() => {
     if (!activeId || !userId) {
       setMessages([]);
+      setMessagesLoading(false);
       return;
     }
     let cancelled = false;
