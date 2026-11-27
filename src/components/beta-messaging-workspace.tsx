@@ -65,13 +65,14 @@ export function BetaMessagingWorkspace() {
   const [mobileChat, setMobileChat] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const activeIdRef = useRef("");
+  const inboxRef = useRef<InboxItem[]>([]);
 
   const active = inbox.find((item) => item.id === activeId) ?? null;
   const filteredInbox = inbox.filter((item) =>
     (item.name + " " + item.username + " " + item.preview).toLocaleLowerCase("pt-BR").includes(search.toLocaleLowerCase("pt-BR"))
   );
   const filteredDirectory = directory.filter((person) =>
-    (person.display_name ?? person.username).toLocaleLowerCase("pt-BR").includes(directorySearch.toLocaleLowerCase("pt-BR"))
+    (person.display_name + " " + person.username).toLocaleLowerCase("pt-BR").includes(directorySearch.toLocaleLowerCase("pt-BR"))
   );
 
   const loadInbox = useCallback(async (uid: string) => {
@@ -93,7 +94,8 @@ export function BetaMessagingWorkspace() {
     const [profilesResult, messagesResult] = await Promise.all([
       supabase.from("profiles").select("id,display_name,username").in("id", peerIds),
       supabase.from("messages").select("id,conversation_id,sender_id,body,created_at,client_message_id")
-        .in("conversation_id", conversationIds).order("created_at", { ascending: false }).limit(200),
+        .in("conversation_id", conversationIds)
+        .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(200),
     ]);
     if (profilesResult.error) throw profilesResult.error;
     if (messagesResult.error) throw messagesResult.error;
@@ -124,8 +126,9 @@ export function BetaMessagingWorkspace() {
     const { data, error: queryError } = await supabase.from("messages")
       .select("id,conversation_id,sender_id,body,created_at,client_message_id")
       .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false }).order("id", { ascending: false })
       .limit(50);
+    if (activeIdRef.current !== conversationId) return;
     setMessagesLoading(false);
     if (queryError) throw queryError;
     const rows = ((data ?? []) as MessageRow[]).reverse();
@@ -168,11 +171,17 @@ export function BetaMessagingWorkspace() {
     return () => { cancelled = true; };
   }, [loadInbox, router, supabase]);
 
-  useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+  useEffect(() => {
+    activeIdRef.current = activeId;
+    setOlderLoading(false);
+    setHasOlder(false);
+  }, [activeId]);
+  useEffect(() => { inboxRef.current = inbox; }, [inbox]);
 
   useEffect(() => {
     if (!activeId || !userId) {
       setMessages([]);
+      setMessagesLoading(false);
       return;
     }
     let cancelled = false;
@@ -219,6 +228,27 @@ export function BetaMessagingWorkspace() {
   }, [activeId, loadInbox, loadMessages, supabase, userId]);
 
   useEffect(() => {
+    if (!userId) return;
+    const channel = supabase.channel("inbox-messages:" + userId)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+      }, (payload) => {
+        const row = payload.new as MessageRow;
+        if (!inboxRef.current.some((item) => item.id === row.conversation_id)) {
+          void loadInbox(userId).catch(() => setError("Não foi possível atualizar a lista de conversas."));
+          return;
+        }
+        setInbox((current) => current.map((item) => item.id === row.conversation_id
+          ? { ...item, preview: row.body, updatedAt: row.created_at }
+          : item).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [loadInbox, supabase, userId]);
+
+  useEffect(() => {
     if (!modalOpen || !userId) return;
     let cancelled = false;
     async function loadDirectory() {
@@ -243,6 +273,7 @@ export function BetaMessagingWorkspace() {
       return;
     }
     const conversationId = data as string;
+    activeIdRef.current = conversationId;
     await loadInbox(userId);
     setActiveId(conversationId);
     setMobileChat(true);
@@ -287,8 +318,10 @@ export function BetaMessagingWorkspace() {
     setOlderLoading(true);
     const { data, error: olderError } = await supabase.from("messages")
       .select("id,conversation_id,sender_id,body,created_at,client_message_id")
-      .eq("conversation_id", activeId).lt("created_at", oldest.created_at)
-      .order("created_at", { ascending: false }).limit(50);
+      .eq("conversation_id", activeId)
+      .or(`created_at.lt.${oldest.created_at},and(created_at.eq.${oldest.created_at},id.lt.${oldest.id})`)
+      .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(50);
+    if (activeIdRef.current !== activeId) return;
     setOlderLoading(false);
     if (olderError) {
       setNotice("Não foi possível carregar mensagens anteriores.");
@@ -316,7 +349,7 @@ export function BetaMessagingWorkspace() {
           {loading && <p className="beta-muted">Carregando suas conversas…</p>}
           {!loading && filteredInbox.length === 0 && <div className="beta-empty-small"><strong>Nenhuma conversa ainda</strong><span>Inicie uma conversa com alguém da organização.</span><button type="button" onClick={() => setModalOpen(true)}>Nova conversa</button></div>}
           {filteredInbox.map((item) => (
-            <button type="button" key={item.id} className={"beta-inbox-item" + (activeId === item.id ? " is-active" : "")} onClick={() => { setActiveId(item.id); setMobileChat(true); }}>
+            <button type="button" key={item.id} className={"beta-inbox-item" + (activeId === item.id ? " is-active" : "")} onClick={() => { activeIdRef.current = item.id; setActiveId(item.id); setMobileChat(true); }}>
               <span className="beta-avatar">{initials(item.name)}</span>
               <span className="beta-inbox-copy"><strong>{item.name}</strong><small>{item.preview}</small></span>
               <time>{formatTime(item.updatedAt)}</time>
