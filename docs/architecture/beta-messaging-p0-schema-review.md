@@ -1,3 +1,68 @@
+# Status de aplicação — 27/11/2026
+
+<badge>APLICADO NO SUPABASE BEX</badge>
+
+A PO aprovou a proposta e as migrations abaixo foram aplicadas ao projeto Supabase BEX `nqmwjlulujwwbpnruwyd`. O bloco SQL de rascunho apresentado mais abaixo neste documento é **histórico e não deve ser executado novamente**: a implementação efetiva recebeu ajustes durante a validação, descritos aqui.
+
+## Migrations registradas no Supabase
+
+| Versão | Migration |
+|---|---|
+| 20261127013919 | `bex_beta_messaging_p0_schema` |
+| 20261127013924 | `bex_beta_seed_test_users` |
+| 20261127013938 | `bex_beta_direct_conversation_idempotency` |
+| 20261127013956 | `fix_direct_conversation_insert_policy` |
+| 20261127014055 | `fix_direct_conversation_returning_rls` |
+| 20261127014110 | `secure_direct_conversation_membership_check` |
+| 20261127014132 | `avoid_conflict_returning_in_direct_conversation_rpc` |
+
+## Estado efetivo
+
+- Criadas as seis tabelas: `organizations`, `profiles`, `organization_members`, `conversations`, `conversation_members`, `messages`.
+- RLS habilitada nas seis tabelas.
+- Organização `bex-beta` criada.
+- Perfis `lola.beta` e `zabi.beta` criados e ativos na mesma organização.
+- Apenas `authenticated` recebeu grants mínimos de leitura/escrita; `anon` não tem acesso às mensagens nem permissão de executar a RPC.
+- `messages` adicionada à publicação `supabase_realtime`.
+- RPC `public.create_direct_conversation(uuid)` é SECURITY INVOKER. Helpers SECURITY DEFINER ficam no schema não exposto `bex_private`, com EXECUTE limitado a authenticated.
+- A função foi ajustada para não depender de `INSERT ... RETURNING` ou `ON CONFLICT` em caminho que seria bloqueado pela política SELECT antes de os participantes serem associados.
+- A política de criação valida que os dois usuários são membros ativos da mesma organização.
+
+## Testes executados
+
+Teste transacional sob o papel PostgreSQL `authenticated`, simulando as claims das duas contas:
+
+- Lola cria a conversa direta com Zabi.
+- Lola insere uma mensagem e consegue lê-la.
+- Zabi consegue ler a mesma mensagem.
+- Zabi solicita a mesma conversa e recebe o mesmo ID (idempotência).
+- Resultado: uma conversa e uma mensagem dentro da transação de teste.
+- A transação foi revertida (`ROLLBACK`): **nenhuma conversa nem mensagem de teste ficou gravada**.
+- Usuário autenticado sem membership não vê mensagens e não consegue criar conversa.
+
+Auditoria de permissões:
+- `anon` não consegue SELECT em `messages`.
+- `authenticated` consegue SELECT/INSERT em `messages`.
+- `anon` não consegue executar `create_direct_conversation`.
+- `authenticated` consegue executar a RPC.
+- Realtime confirma `public.messages` na publicação.
+
+## Advisors após aplicação
+
+- Security: sem avisos de RLS ou exposição de tabelas nas seis tabelas. Permanece um aviso de configuração geral do Auth: **Leaked Password Protection Disabled**. Recomenda-se habilitar proteção contra senhas comprometidas antes da produção: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- Performance: os índices adicionais aparecem como ainda não utilizados, esperado antes de existir tráfego real. Reavaliar após os primeiros testes de uso; não removê-los preventivamente.
+
+## Limitações e próximos passos
+
+- A estrutura do banco está aplicada, mas a interface Next.js ainda não foi conectada a estas tabelas.
+- O Data API tem grants mínimos preparados. O schema `public` é exposto por padrão no Supabase; o acesso efetivo continua controlado por GRANT e RLS.
+- A entrega em tempo real ainda precisa ser validada com clientes reais e sessões de navegador distintas; a publicação está configurada, mas o teste realizado foi no banco.
+- A exceção temporária de múltiplos dispositivos continua restrita às contas Beta no Preview; a implementação definitiva de dispositivos permanece adiada até antes da produção.
+- O fluxo de login ainda precisa da revisão já documentada sobre alias técnico no JWT/sessão.
+- Nenhum merge, deploy ou alteração no repositório CONNEXA3 foi realizado.
+
+---
+
 # BEX Beta — proposta de schema e segurança para mensagens P0
 
 **Status: proposta para revisão da PO. NÃO EXECUTAR.**  
