@@ -82,7 +82,7 @@ An IT employee without an active support assignment remains a normal collaborato
 
 ## 8. Remaining decisions and implementation gates
 
-- Device operations selected: consult registered-device inventory and revoke/remove a registered device. Finalize API semantics, confirmation UX, and safeguards during technical review.
+- Device operations selected: consult the registered-device record and revoke/remove that registered device. The support agent's visibility is restricted to the one device identified by the active assignment; complete inventory listing, browsing, or search is prohibited. Finalize API semantics, confirmation UX, and safeguards during technical review.
 - Identify the canonical device registry and ownership model already present or planned in BEX.
 - Grant, renewal, and revocation authority is decided: only the three equivalent chief IT administrators may perform these operations. Enforce no self-grant/self-elevation; every renewal must be auditable and each authorization remains subject to the eight-hour maximum.
 - Device scope is decided: exactly one specific registered device per assignment; additional devices require separate assignments.
