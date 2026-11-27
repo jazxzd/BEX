@@ -71,7 +71,7 @@ An IT employee without an active support assignment remains a normal collaborato
 - Agent cannot act without an active assignment, non-empty justification, or outside the valid time window.
 - `it_support` and other lower-privilege TI members cannot revoke, suspend, shorten, or invalidate support assignments.
 - Each of the three equivalent chief IT administrators can grant, renew, and revoke an assignment; each operation is denied to all other roles and always audited.
-- Device inventory consultation and registered-device revoke/remove operations are supported only for the specifically authorized device and must be audited.
+- Consultation and revoke/remove operations are supported only for the specifically authorized device record; complete inventory consultation is prohibited. Each operation must be audited.
 - Access is denied immediately after revocation, agent/target deactivation, or eight-hour expiry.
 - Client-supplied organization, target, device, or capability manipulation cannot bypass server validation.
 - Ordinary collaborator cannot create or elevate an assignment.
