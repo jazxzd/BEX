@@ -7,25 +7,26 @@
 - [x] `messages` adicionada à publicação `supabase_realtime`.
 - [x] Teste transacional de criação de conversa, envio e leitura cruzada Lola/Zabi, idempotência e bloqueio de usuário sem membership.
 - [x] Advisors executados. Nenhum alerta de RLS/exposição de tabelas; permanece aviso geral de proteção contra senhas comprometidas desativada.
-- [ ] Conectar a interface Next.js ao diretório, conversas, histórico e envio persistente.
-- [ ] Validar Realtime com duas sessões reais em dispositivos diferentes.
-- [ ] Validar CI e Preview Vercel.
+- [x] Conectar a interface Next.js ao diretório, conversas diretas, histórico paginado e envio persistente (commit `e36f9ff`).
+- [x] Implementar assinatura Supabase Realtime para INSERT de mensagens, com limpeza de canal e recuperação de histórico ao voltar a conexão.
+- [x] CI concluído: lint, typecheck e build passaram (run [#45924639921](https://github.com/jazxzd/BEX/actions/runs/45924639921)).
+- [x] Preview Vercel criado e deployment concluído para o commit `e36f9ff`.
+- [ ] Testar troca de mensagens em duas sessões reais (Lola.beta e Zabi.beta) e confirmar refresh/reabertura.
 - [ ] Implementar controle definitivo de dispositivos antes da produção.
 
 **Relatório detalhado:** [schema aplicado, migrations e testes](https://github.com/jazxzd/BEX/blob/feature/beta-messaging-p0/docs/architecture/beta-messaging-p0-schema-review.md).
 
 # BEX Beta — plano de implementação de mensagens P0
 
-Status: plano atualizado na branch `feature/beta-messaging-p0`. A regra de dispositivos foi formalmente adiada para uma etapa posterior do Beta/produção. A proposta de schema e RLS está em `docs/architecture/beta-messaging-p0-schema-review.md` e aguarda aprovação da PO. Este documento não executa SQL, não altera o Supabase e não autoriza merge ou deploy.
+Status: fundação de banco aplicada e interface P0 conectada na branch `feature/beta-messaging-p0`. A regra definitiva de dispositivos foi formalmente adiada. O teste manual com duas sessões reais ainda está pendente. Este documento não autoriza novas alterações de schema, merge ou deploy de produção.
 
 ## 1. Diagnóstico confirmado
 
-- A rota principal `src/app/page.tsx` mantém conversas e mensagens em estado React local.
-- O envio atual apenas adiciona a mensagem ao estado do navegador e exibe o aviso "Mensagem adicionada apenas ao protótipo. Ela não foi enviada.".
-- A criação de conversa também é local e recebe um nome digitado; não consulta um diretório real de usuários.
-- A rota `/conversas` redireciona para `/`.
-- O projeto Supabase BEX consultado não possui tabelas no schema `public` nem migrations registradas.
-- Portanto, a tela atual é um protótipo visual, não um chat conectado ao banco.
+- Diagnóstico histórico da etapa anterior à aplicação do schema: a home era um protótipo local e `/conversas` redirecionava para `/`.
+- Estado atual: `src/app/page.tsx` monta `BetaMessagingWorkspace`, que consulta colaboradores, conversas e mensagens no Supabase sob a sessão autenticada e RLS.
+- A criação de conversa usa `create_direct_conversation`; o envio só aparece como confirmado após `INSERT` persistido.
+- Histórico carrega 50 mensagens por vez e permite buscar mensagens anteriores.
+- Supabase Realtime escuta novos registros em `public.messages` para a conversa ativa.
 
 ## 2. Decisão de escopo Beta — dispositivos
 

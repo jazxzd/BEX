@@ -4,6 +4,18 @@
 
 A PO aprovou a proposta e as migrations abaixo foram aplicadas ao projeto Supabase BEX `nqmwjlulujwwbpnruwyd`. O bloco SQL de rascunho apresentado mais abaixo neste documento é **histórico e não deve ser executado novamente**: a implementação efetiva recebeu ajustes durante a validação, descritos aqui.
 
+## Integração da interface — 27/11/2026
+
+**Status: IMPLEMENTADA NA BRANCH / PREVIEW PRONTO / TESTE MANUAL PENDENTE**
+
+- Commit da interface: [e36f9ff](https://github.com/jazxzd/BEX/commit/e36f9ff80cf4cd99a99150f2410f64dbbf142680).
+- `src/components/beta-messaging-workspace.tsx` conecta diretório, conversas diretas, histórico paginado, envio persistente e Realtime.
+- `src/app/page.tsx` deixou de usar conversas e mensagens fictícias locais.
+- CI: lint, typecheck e build concluídos com sucesso ([run #45924639921](https://github.com/jazxzd/BEX/actions/runs/45924639921)).
+- Vercel Preview: deployment concluído para este commit; URL de branch: https://bex-git-feature-beta-messaging-p0-bex20.vercel.app
+- **Pendente:** teste funcional com Lola.beta e Zabi.beta em duas sessões reais, incluindo recebimento sem refresh, persistência após refresh e isolamento de usuário não participante.
+- Nenhuma nova migration/SQL foi executada nesta etapa. Nenhum merge ou deploy de produção foi realizado.
+
 ## Migrations registradas no Supabase
 
 | Versão | Migration |
