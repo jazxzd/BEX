@@ -6,14 +6,14 @@ A PO aprovou a proposta e as migrations abaixo foram aplicadas ao projeto Supaba
 
 ## Integração da interface — 27/11/2026
 
-**Status: IMPLEMENTADA NA BRANCH / PREVIEW PRONTO / TESTE MANUAL PENDENTE**
+**Status: IMPLEMENTADA NA BRANCH / PREVIEW PRONTO / TESTE FUNCIONAL ACEITO PELA PO**
 
 - Commit da interface: [e36f9ff](https://github.com/jazxzd/BEX/commit/e36f9ff80cf4cd99a99150f2410f64dbbf142680).
 - `src/components/beta-messaging-workspace.tsx` conecta diretório, conversas diretas, histórico paginado, envio persistente e Realtime.
 - `src/app/page.tsx` deixou de usar conversas e mensagens fictícias locais.
-- CI: lint, typecheck e build concluídos com sucesso ([run #45924639921](https://github.com/jazxzd/BEX/actions/runs/45924639921)).
+- CI no commit atual da PR #8: lint, typecheck e build concluídos com sucesso ([run #45926786491](https://github.com/jazxzd/BEX/actions/runs/45926786491)).
 - Vercel Preview: deployment concluído para este commit; URL de branch: https://bex-git-feature-beta-messaging-p0-bex20.vercel.app
-- **Pendente:** teste funcional com Lola.beta e Zabi.beta em duas sessões reais, incluindo recebimento sem refresh, persistência após refresh e isolamento de usuário não participante.
+- **Aceite funcional registrado:** a PO confirmou que as mensagens estão funcionais no Beta. A confirmação valida o fluxo de mensagens no ambiente Beta; não substitui os testes adicionais de segurança, isolamento e produção descritos nas pendências.
 - Nenhuma nova migration/SQL foi executada nesta etapa. Nenhum merge ou deploy de produção foi realizado.
 
 ## Migrations registradas no Supabase
@@ -66,9 +66,9 @@ Auditoria de permissões:
 
 ## Limitações e próximos passos
 
-- A estrutura do banco está aplicada, mas a interface Next.js ainda não foi conectada a estas tabelas.
+- A interface Next.js está conectada às tabelas na branch `feature/beta-messaging-p0`; a integração ainda aguarda consolidação por PR e revisão técnica.
 - O Data API tem grants mínimos preparados. O schema `public` é exposto por padrão no Supabase; o acesso efetivo continua controlado por GRANT e RLS.
-- A entrega em tempo real ainda precisa ser validada com clientes reais e sessões de navegador distintas; a publicação está configurada, mas o teste realizado foi no banco.
+- A PO confirmou o funcionamento das mensagens no Beta. A publicação Realtime está configurada; testes ampliados de reconexão, isolamento e carga continuam recomendados antes de produção.
 - A exceção temporária de múltiplos dispositivos continua restrita às contas Beta no Preview; a implementação definitiva de dispositivos permanece adiada até antes da produção.
 - O fluxo de login ainda precisa da revisão já documentada sobre alias técnico no JWT/sessão.
 - Nenhum merge, deploy ou alteração no repositório CONNEXA3 foi realizado.
