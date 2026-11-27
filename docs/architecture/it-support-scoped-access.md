@@ -10,7 +10,7 @@ Status: proposed architecture choices recorded from the PO on 26/11/2026; pendin
 | Scope | Devices | First design is limited to device-related support. Session revocation, general account assistance, messages, files, call content, and conversation history are excluded unless separately approved. |
 | Duration | 8 hours | Each grant is valid for at most eight hours from its start. Expiry is enforced server-side; early revocation is allowed only by one of the three equivalent chief IT administrators. |
 
-The PO selected both device inventory consultation and the ability to revoke/remove a registered device. These are the approved functional boundaries for the proposal; the exact API semantics, confirmation flow, and technical/privacy safeguards still require review before implementation.
+The PO selected consultation of a registered device and the ability to revoke/remove a registered device. **Visibility is limited to the single device explicitly covered by the support assignment**: an `it_support` agent must not browse, list, search, or otherwise consult the target user's complete device inventory. The exact API semantics, confirmation flow, and technical/privacy safeguards still require review before implementation.
 
 ## 2. Purpose and assignment model
 
