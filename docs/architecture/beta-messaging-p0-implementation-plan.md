@@ -1,3 +1,19 @@
+## Progresso atualizado — 27/11/2026
+
+- [x] PO aprovou o modelo de banco e as regras de segurança.
+- [x] Seis tabelas criadas no Supabase BEX e RLS habilitada em todas.
+- [x] Organização Beta e perfis Lola.beta/Zabi.beta provisionados.
+- [x] Grants mínimos: sem acesso anon; authenticated limitado por RLS.
+- [x] `messages` adicionada à publicação `supabase_realtime`.
+- [x] Teste transacional de criação de conversa, envio e leitura cruzada Lola/Zabi, idempotência e bloqueio de usuário sem membership.
+- [x] Advisors executados. Nenhum alerta de RLS/exposição de tabelas; permanece aviso geral de proteção contra senhas comprometidas desativada.
+- [ ] Conectar a interface Next.js ao diretório, conversas, histórico e envio persistente.
+- [ ] Validar Realtime com duas sessões reais em dispositivos diferentes.
+- [ ] Validar CI e Preview Vercel.
+- [ ] Implementar controle definitivo de dispositivos antes da produção.
+
+**Relatório detalhado:** [schema aplicado, migrations e testes](https://github.com/jazxzd/BEX/blob/feature/beta-messaging-p0/docs/architecture/beta-messaging-p0-schema-review.md).
+
 # BEX Beta — plano de implementação de mensagens P0
 
 Status: plano atualizado na branch `feature/beta-messaging-p0`. A regra de dispositivos foi formalmente adiada para uma etapa posterior do Beta/produção. A proposta de schema e RLS está em `docs/architecture/beta-messaging-p0-schema-review.md` e aguarda aprovação da PO. Este documento não executa SQL, não altera o Supabase e não autoriza merge ou deploy.
