@@ -295,6 +295,82 @@ Após criar as tabelas, o seed deverá:
 
 Os e-mails técnicos não serão gravados em `profiles` nem exibidos no diretório. Nenhuma senha será lida, copiada ou armazenada pelo BEX.
 
+### SQL de seed Beta proposto — também não executar antes da aprovação
+
+```sql
+do $
+declare
+  v_org_id uuid;
+  v_auth_user_count integer;
+begin
+  select count(*) into v_auth_user_count
+  from auth.users
+  where lower(email) in (
+    'lola.beta@betatest.test',
+    'zabi.beta@betatest.test'
+  );
+
+  if v_auth_user_count <> 2 then
+    raise exception 'Expected exactly two existing Beta Auth users; found %', v_auth_user_count;
+  end if;
+
+  insert into public.organizations (slug, name)
+  values ('bex-beta', 'BEX Beta')
+  on conflict (slug) do nothing;
+
+  select id into v_org_id
+  from public.organizations
+  where slug = 'bex-beta';
+
+  if exists (
+    select 1
+    from auth.users u
+    join public.organization_members om on om.user_id = u.id
+    where lower(u.email) in (
+      'lola.beta@betatest.test',
+      'zabi.beta@betatest.test'
+    )
+      and om.organization_id <> v_org_id
+  ) then
+    raise exception 'A Beta user is already assigned to a different organization';
+  end if;
+
+  insert into public.profiles (id, username, display_name)
+  select u.id, seed.username, seed.display_name
+  from (
+    values
+      ('lola.beta@betatest.test', 'lola.beta', 'Lola.beta'),
+      ('zabi.beta@betatest.test', 'zabi.beta', 'Zabi.beta')
+  ) as seed(email, username, display_name)
+  join auth.users u on lower(u.email) = seed.email
+  on conflict (id) do nothing;
+
+  insert into public.organization_members (organization_id, user_id, status)
+  select v_org_id, u.id, 'active'
+  from auth.users u
+  where lower(u.email) in (
+    'lola.beta@betatest.test',
+    'zabi.beta@betatest.test'
+  )
+  on conflict (user_id) do nothing;
+
+  if (
+    select count(*)
+    from public.organization_members om
+    join auth.users u on u.id = om.user_id
+    where om.organization_id = v_org_id
+      and om.status = 'active'
+      and lower(u.email) in (
+        'lola.beta@betatest.test',
+        'zabi.beta@betatest.test'
+      )
+  ) <> 2 then
+    raise exception 'Could not activate both Beta users in BEX Beta organization';
+  end if;
+end;
+$;
+```
+
 ## 6. Configuração obrigatória do Data API
 
 Além de RLS e GRANTs, será necessário conferir no painel Supabase se o schema `public` está habilitado em **API Settings → Exposed schemas**. Desde 30/10/2026, novas tabelas em `public` não são automaticamente expostas à Data API. Não presumir que a existência da tabela já a torna acessível pelo client.
