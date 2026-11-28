@@ -42,3 +42,30 @@
 .beta-notice{position:fixed;z-index:120;right:18px;bottom:18px;display:flex;align-items:center;gap:12px;max-width:min(460px,calc(100vw - 36px));padding:13px 16px;border:1px solid #e6cda9;border-radius:12px;background:#fff7eb;color:#754a22;font-size:12px;box-shadow:0 10px 32px #0002}.beta-notice.is-error{border-color:#e4b4b4;background:#fff0f0;color:#8b3333}.beta-notice button{border:0;background:transparent;color:inherit;font-size:17px;cursor:pointer}
 @media(max-width:760px){.beta-messaging{grid-template-columns:1fr;min-height:0}.beta-sidebar{height:100dvh;border-right:0}.beta-chat{display:none;height:100dvh}.beta-chat.mobile-visible{display:flex;position:fixed;inset:0;z-index:20}.beta-sidebar:has(~.beta-chat.mobile-visible){display:none}.beta-back{display:block}.beta-chat-header{height:66px;padding:0 14px}.beta-message-area{padding:16px 14px}.beta-bubble{max-width:88%}.beta-composer{margin:0 10px;padding:9px}.beta-composer-hint{margin-right:12px}.beta-brand{height:66px}.beta-sidebar-heading{padding-top:18px}}
 @media(prefers-color-scheme:dark){html[data-theme="sunset"] .beta-messaging{--canvas:#171a21;--surface:#20242d;--ink:#f2f0eb;--muted:#a7a8ad;--line:#343944;--soft:#2b303a}.beta-messaging:has(.beta-chat){}html[data-theme="sunset"] .beta-message-row.mine .beta-bubble{background:#3a3027;border-color:#5a4736}}
+
+
+/* BEX workspace shell: keep the persistent messaging workspace intact while
+   restoring clear navigation between the platform's main areas. */
+.beta-messaging{grid-template-columns:68px 340px minmax(0,1fr)}
+.beta-app-nav{display:flex;flex-direction:column;align-items:center;gap:24px;padding:16px 7px;background:#25283a;color:#fff}
+.beta-app-logo{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:#e9a052;color:#25283a;text-decoration:none;font-size:20px;font-weight:900}
+.beta-app-nav nav{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%}
+.beta-app-nav nav a{display:grid;justify-items:center;gap:4px;width:52px;padding:9px 2px;border-radius:12px;color:#d6d6df;text-decoration:none}
+.beta-app-nav nav a>span{font-size:20px;line-height:1}
+.beta-app-nav nav a small{font-size:8px}
+.beta-app-nav nav a:hover,.beta-app-nav nav a.is-current{background:#ffffff1c;color:#fff}
+.beta-app-nav-foot{display:flex;align-items:center;gap:5px;margin-top:auto;color:#c6c6d1;font-size:8px;letter-spacing:.08em}
+.beta-nav-status{width:6px;height:6px;border-radius:50%;background:#6dd6a2}
+.beta-mobile-nav{display:none}
+@media(max-width:760px){
+  .beta-messaging{grid-template-columns:1fr;min-height:0;padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+  .beta-app-nav{display:none}
+  .beta-sidebar{height:calc(100dvh - 66px - env(safe-area-inset-bottom))}
+  .beta-chat{height:calc(100dvh - 66px - env(safe-area-inset-bottom))}
+  .beta-chat.mobile-visible{inset:0 0 calc(66px + env(safe-area-inset-bottom));height:auto}
+  .beta-mobile-nav{position:fixed;z-index:40;right:0;bottom:0;left:0;display:flex;justify-content:space-around;align-items:center;height:calc(66px + env(safe-area-inset-bottom));padding:5px 5px env(safe-area-inset-bottom);border-top:1px solid var(--line,#e7e7e2);background:var(--surface,#fff)}
+  .beta-mobile-nav a{display:grid;justify-items:center;align-content:center;gap:4px;min-width:0;min-height:48px;flex:1;color:var(--muted,#858585);text-decoration:none}
+  .beta-mobile-nav a>span{font-size:19px;line-height:1}
+  .beta-mobile-nav a small{font-size:9px}
+  .beta-mobile-nav a.is-current{color:#a96b2f;font-weight:800}
+}
