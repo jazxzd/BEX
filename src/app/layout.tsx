@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeToggle } from "@/components/theme-toggle";
 import "./globals.css";
+import "./beta-messaging.css";
 
 export const metadata: Metadata = {
   title: {
