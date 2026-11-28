@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { FormEvent, KeyboardEvent } from "react";
+import Link from "next/link";
+import type { ChangeEvent, FormEvent, KeyboardEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Collaborator = { id: string; display_name: string | null; username: string };
+type Collaborator = { id: string; display_name: string | null; username: string; avatar_path?: string | null; avatarUrl?: string | null };
 type ConversationRow = {
   id: string;
   direct_user_a: string;
@@ -27,6 +28,7 @@ type InboxItem = {
   username: string;
   preview: string;
   updatedAt: string;
+  avatarUrl: string | null;
 };
 type ViewMessage = MessageRow & { mine: boolean };
 
@@ -40,11 +42,19 @@ function initials(value: string) {
   return value.trim().split(/\s+/).slice(0, 2).map((part) => part[0] ?? "").join("").toLocaleUpperCase("pt-BR") || "?";
 }
 
+function Avatar({ name, src, className = "" }: { name: string; src?: string | null; className?: string }) {
+  return <span className={("beta-avatar " + className).trim()}>{src ? <img src={src} alt="" /> : initials(name)}</span>;
+}
+
 export function BetaMessagingWorkspace() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [userId, setUserId] = useState("");
   const [myName, setMyName] = useState("Minha conta");
+  const [myAvatarPath, setMyAvatarPath] = useState<string | null>(null);
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [inbox, setInbox] = useState<InboxItem[]>([]);
   const [activeId, setActiveId] = useState("");
   const [messages, setMessages] = useState<ViewMessage[]>([]);
@@ -63,7 +73,8 @@ export function BetaMessagingWorkspace() {
   const [error, setError] = useState("");
   const [realtimeStatus, setRealtimeStatus] = useState("connecting");
   const [mobileChat, setMobileChat] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messageAreaRef = useRef<HTMLDivElement>(null);
+  const lastRenderedMessageIdRef = useRef<string | null>(null);
   const activeIdRef = useRef("");
 
   const active = inbox.find((item) => item.id === activeId) ?? null;
@@ -91,7 +102,7 @@ export function BetaMessagingWorkspace() {
     const peerIds = [...new Set(rows.map((row) => row.direct_user_a === uid ? row.direct_user_b : row.direct_user_a))];
     const conversationIds = rows.map((row) => row.id);
     const [profilesResult, messagesResult] = await Promise.all([
-      supabase.from("profiles").select("id,display_name,username").in("id", peerIds),
+      supabase.from("profiles").select("id,display_name,username,avatar_path").in("id", peerIds),
       supabase.from("messages").select("id,conversation_id,sender_id,body,created_at,client_message_id")
         .in("conversation_id", conversationIds).order("created_at", { ascending: false }).limit(200),
     ]);
@@ -99,6 +110,12 @@ export function BetaMessagingWorkspace() {
     if (messagesResult.error) throw messagesResult.error;
 
     const profiles = new Map((profilesResult.data ?? []).map((profile) => [profile.id, profile]));
+    const avatarUrls = new Map<string, string | null>();
+    await Promise.all((profilesResult.data ?? []).map(async (profile) => {
+      if (!profile.avatar_path) { avatarUrls.set(profile.id, null); return; }
+      const { data: signed, error: signedError } = await supabase.storage.from("profile-avatars").createSignedUrl(profile.avatar_path, 3600);
+      avatarUrls.set(profile.id, signedError ? null : signed.signedUrl);
+    }));
     const latest = new Map<string, MessageRow>();
     for (const message of (messagesResult.data ?? []) as MessageRow[]) {
       if (!latest.has(message.conversation_id)) latest.set(message.conversation_id, message);
@@ -114,6 +131,7 @@ export function BetaMessagingWorkspace() {
         username: profile?.username || "",
         preview: lastMessage?.body || "Conversa iniciada. Envie a primeira mensagem.",
         updatedAt: lastMessage?.created_at || row.created_at,
+        avatarUrl: avatarUrls.get(peerId) ?? null,
       };
     }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     setInbox(items);
@@ -131,7 +149,6 @@ export function BetaMessagingWorkspace() {
     const rows = ((data ?? []) as MessageRow[]).reverse();
     setMessages(rows.map((row) => ({ ...row, mine: row.sender_id === uid })));
     setHasOlder(rows.length === 50);
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ block: "end" }));
   }, [supabase]);
 
   useEffect(() => {
@@ -147,7 +164,7 @@ export function BetaMessagingWorkspace() {
       }
       setUserId(user.id);
       const [{ data: profile, error: profileError }, { data: membership, error: membershipError }] = await Promise.all([
-        supabase.from("profiles").select("display_name,username").eq("id", user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name,username,avatar_path").eq("id", user.id).maybeSingle(),
         supabase.from("organization_members").select("organization_id,status").eq("user_id", user.id).maybeSingle(),
       ]);
       if (cancelled) return;
@@ -157,6 +174,11 @@ export function BetaMessagingWorkspace() {
         return;
       }
       setMyName(profile?.display_name || profile?.username || "Minha conta");
+      setMyAvatarPath(profile?.avatar_path ?? null);
+      if (profile?.avatar_path) {
+        const { data: signedAvatar, error: signedAvatarError } = await supabase.storage.from("profile-avatars").createSignedUrl(profile.avatar_path, 3600);
+        if (!signedAvatarError) setMyAvatarUrl(signedAvatar.signedUrl);
+      }
       try {
         await loadInbox(user.id);
       } catch {
@@ -169,6 +191,20 @@ export function BetaMessagingWorkspace() {
   }, [loadInbox, router, supabase]);
 
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+  // Scroll only when the newest message changes. Older-page pagination prepends
+  // rows but keeps the last message ID, so it will not yank the reader to the bottom.
+  useEffect(() => {
+    const newestMessage = messages[messages.length - 1];
+    const newestId = newestMessage?.id ?? null;
+    if (!newestId || newestId === lastRenderedMessageIdRef.current) return;
+    lastRenderedMessageIdRef.current = newestId;
+    const frame = requestAnimationFrame(() => {
+      const area = messageAreaRef.current;
+      if (area) area.scrollTo({ top: area.scrollHeight, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [messages]);
+
 
   useEffect(() => {
     if (!activeId || !userId) {
@@ -199,7 +235,6 @@ export function BetaMessagingWorkspace() {
         setInbox((current) => current.map((item) => item.id === row.conversation_id
           ? { ...item, preview: row.body, updatedAt: row.created_at }
           : item).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
-        requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }));
       })
       .subscribe((status) => {
         setRealtimeStatus(status === "SUBSCRIBED" ? "connected" : status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED" ? "disconnected" : "connecting");
@@ -224,15 +259,69 @@ export function BetaMessagingWorkspace() {
     async function loadDirectory() {
       setDirectoryLoading(true);
       const { data, error: directoryError } = await supabase.from("profiles")
-        .select("id,display_name,username").neq("id", userId).order("display_name", { ascending: true });
+        .select("id,display_name,username,avatar_path").neq("id", userId).order("display_name", { ascending: true });
       if (cancelled) return;
       if (directoryError) setNotice("Não foi possível carregar o diretório de colaboradores.");
-      else setDirectory((data ?? []) as Collaborator[]);
+      else {
+        const people = await Promise.all((data ?? []).map(async (person) => {
+          let avatarUrl: string | null = null;
+          if (person.avatar_path) {
+            const { data: signed, error: signedError } = await supabase.storage.from("profile-avatars").createSignedUrl(person.avatar_path, 3600);
+            if (!signedError) avatarUrl = signed.signedUrl;
+          }
+          return { ...person, avatarUrl } as Collaborator;
+        }));
+        if (!cancelled) setDirectory(people);
+      }
       setDirectoryLoading(false);
     }
     void loadDirectory();
     return () => { cancelled = true; };
   }, [modalOpen, supabase, userId]);
+
+  async function updateAvatar(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !userId || avatarUploading) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setNotice("Use uma imagem JPG, PNG ou WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setNotice("A foto deve ter no máximo 5 MB.");
+      return;
+    }
+    const extension = file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : "webp";
+    const nextPath = userId + "/" + crypto.randomUUID() + "." + extension;
+    setAvatarUploading(true);
+    setNotice("");
+    const { error: uploadError } = await supabase.storage.from("profile-avatars").upload(nextPath, file, {
+      contentType: file.type,
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (uploadError) {
+      setAvatarUploading(false);
+      setNotice("Não foi possível enviar sua foto. Tente novamente.");
+      return;
+    }
+    const { error: updateError } = await supabase.from("profiles").update({ avatar_path: nextPath }).eq("id", userId);
+    if (updateError) {
+      await supabase.storage.from("profile-avatars").remove([nextPath]);
+      setAvatarUploading(false);
+      setNotice("A foto foi enviada, mas não conseguimos atualizar seu perfil.");
+      return;
+    }
+    const { data: signed, error: signedError } = await supabase.storage.from("profile-avatars").createSignedUrl(nextPath, 3600);
+    setMyAvatarPath(nextPath);
+    setMyAvatarUrl(signedError ? null : signed.signedUrl);
+    if (myAvatarPath && myAvatarPath !== nextPath) {
+      await supabase.storage.from("profile-avatars").remove([myAvatarPath]);
+    }
+    setAvatarUploading(false);
+    setNotice("Foto de perfil atualizada.");
+  }
 
   async function startConversation(person: Collaborator) {
     setError("");
@@ -278,7 +367,6 @@ export function BetaMessagingWorkspace() {
       ? { ...item, preview: row.body, updatedAt: row.created_at }
       : item).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
     setDraft("");
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }));
   }
 
   async function loadOlder() {
@@ -308,6 +396,17 @@ export function BetaMessagingWorkspace() {
 
   return (
     <main className="beta-messaging">
+      <aside className="beta-app-nav" aria-label="Navegação principal">
+        <Link href="/" className="beta-app-logo" aria-label="BEX, início">B</Link>
+        <nav>
+          <Link href="/" className="is-current" aria-current="page" title="Conversas"><span>▤</span><small>Conversas</small></Link>
+          <Link href="/grupos" title="Grupos"><span>♧</span><small>Grupos</small></Link>
+          <Link href="/colaboradores" title="Colaboradores"><span>♙</span><small>Equipe</small></Link>
+          <Link href="/departamentos" title="Departamentos"><span>▦</span><small>Setores</small></Link>
+          <Link href="/arquivos" title="Arquivos"><span>▥</span><small>Arquivos</small></Link>
+        </nav>
+        <div className="beta-app-nav-foot"><span className="beta-nav-status" />BETA</div>
+      </aside>
       <aside className="beta-sidebar">
         <div className="beta-brand"><span className="beta-brand-mark">B</span><div><strong>BEX</strong><small>Comunicação interna</small></div></div>
         <div className="beta-sidebar-heading"><span>CONVERSAS</span><button type="button" onClick={() => { setModalOpen(true); setNotice(""); }}>＋</button></div>
@@ -317,24 +416,24 @@ export function BetaMessagingWorkspace() {
           {!loading && filteredInbox.length === 0 && <div className="beta-empty-small"><strong>Nenhuma conversa ainda</strong><span>Inicie uma conversa com alguém da organização.</span><button type="button" onClick={() => setModalOpen(true)}>Nova conversa</button></div>}
           {filteredInbox.map((item) => (
             <button type="button" key={item.id} className={"beta-inbox-item" + (activeId === item.id ? " is-active" : "")} onClick={() => { setActiveId(item.id); setMobileChat(true); }}>
-              <span className="beta-avatar">{initials(item.name)}</span>
+              <Avatar name={item.name} src={item.avatarUrl} />
               <span className="beta-inbox-copy"><strong>{item.name}</strong><small>{item.preview}</small></span>
               <time>{formatTime(item.updatedAt)}</time>
             </button>
           ))}
         </div>
-        <div className="beta-account"><span className="beta-avatar beta-avatar-self">{initials(myName)}</span><span><strong>{myName}</strong><small>Conta conectada</small></span><button type="button" onClick={async () => { await supabase.auth.signOut(); router.replace("/login"); }}>Sair</button></div>
+        <div className="beta-account"><button type="button" className="beta-avatar-button" aria-label="Alterar foto de perfil" title={avatarUploading ? "Enviando foto…" : "Alterar foto de perfil"} disabled={avatarUploading} onClick={() => avatarInputRef.current?.click()}><Avatar name={myName} src={myAvatarUrl} className="beta-avatar-self" /></button><input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(event) => void updateAvatar(event)} /><span><strong>{myName}</strong><small>{avatarUploading ? "Enviando foto…" : "Conta conectada"}</small></span><button type="button" onClick={async () => { await supabase.auth.signOut(); router.replace("/login"); }}>Sair</button></div>
       </aside>
 
       <section className={"beta-chat" + (mobileChat ? " mobile-visible" : "")}>
         {active ? <>
           <header className="beta-chat-header">
             <button type="button" className="beta-back" onClick={() => setMobileChat(false)} aria-label="Voltar para conversas">←</button>
-            <span className="beta-avatar">{initials(active.name)}</span>
+            <Avatar name={active.name} src={active.avatarUrl} />
             <div><strong>{active.name}</strong><small>@{active.username || "colaborador"}</small></div>
             <span className={"beta-live-indicator " + realtimeStatus}>{realtimeStatus === "connected" ? "Conectado" : realtimeStatus === "disconnected" ? "Reconectando…" : "Conectando…"}</span>
           </header>
-          <div className="beta-message-area">
+          <div ref={messageAreaRef} className="beta-message-area">
             {messagesLoading && <p className="beta-muted beta-center">Carregando histórico…</p>}
             {!messagesLoading && hasOlder && <button type="button" className="beta-load-older" onClick={() => void loadOlder()} disabled={olderLoading}>{olderLoading ? "Carregando…" : "Carregar mensagens anteriores"}</button>}
             {!messagesLoading && messages.length === 0 && <div className="beta-empty-chat"><span>✦</span><h2>Comece a conversa</h2><p>Envie uma mensagem para {active.name}. Ela ficará disponível no histórico desta conversa.</p></div>}
@@ -343,7 +442,6 @@ export function BetaMessagingWorkspace() {
               const showDay = !previous || new Date(previous.created_at).toDateString() !== new Date(item.created_at).toDateString();
               return <div key={item.id}>{showDay && <div className="beta-day-divider"><span>{formatDay(item.created_at)}</span></div>}<div className={"beta-message-row" + (item.mine ? " mine" : "")}><div className="beta-bubble"><p>{item.body}</p><time>{formatTime(item.created_at)}{item.mine ? " · Enviada" : ""}</time></div></div></div>;
             })}
-            <div ref={bottomRef} />
           </div>
           <form className="beta-composer" onSubmit={sendMessage}>
             <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={onComposerKeyDown} rows={1} maxLength={4000} placeholder="Escreva uma mensagem… (Enter para enviar)" aria-label="Escreva uma mensagem" />
@@ -353,6 +451,13 @@ export function BetaMessagingWorkspace() {
         </> : <div className="beta-welcome"><span>✦</span><h1>Suas conversas, em um só lugar.</h1><p>Selecione uma conversa ou inicie uma nova com alguém da sua organização.</p><button type="button" onClick={() => setModalOpen(true)}>Iniciar conversa</button></div>}
       </section>
 
+      <nav className="beta-mobile-nav" aria-label="Navegação principal">
+        <Link href="/" className="is-current" aria-current="page"><span>▤</span><small>Conversas</small></Link>
+        <Link href="/grupos"><span>♧</span><small>Grupos</small></Link>
+        <Link href="/colaboradores"><span>♙</span><small>Equipe</small></Link>
+        <Link href="/departamentos"><span>▦</span><small>Setores</small></Link>
+        <Link href="/arquivos"><span>▥</span><small>Arquivos</small></Link>
+      </nav>
       {modalOpen && <div className="beta-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
         <section className="beta-modal" role="dialog" aria-modal="true" aria-labelledby="beta-modal-title">
           <header><div><span>NOVA CONVERSA</span><h2 id="beta-modal-title">Quem você quer chamar?</h2></div><button type="button" onClick={() => setModalOpen(false)} aria-label="Fechar">×</button></header>
@@ -360,7 +465,7 @@ export function BetaMessagingWorkspace() {
           <div className="beta-directory-list">
             {directoryLoading && <p className="beta-muted">Carregando colaboradores…</p>}
             {!directoryLoading && filteredDirectory.length === 0 && <p className="beta-muted">Nenhum colaborador encontrado.</p>}
-            {filteredDirectory.map((person) => <button type="button" key={person.id} onClick={() => void startConversation(person)}><span className="beta-avatar">{initials(person.display_name || person.username)}</span><span><strong>{person.display_name || person.username}</strong><small>@{person.username}</small></span><b>Iniciar →</b></button>)}
+            {filteredDirectory.map((person) => <button type="button" key={person.id} onClick={() => void startConversation(person)}><Avatar name={person.display_name || person.username} src={person.avatarUrl} /><span><strong>{person.display_name || person.username}</strong><small>@{person.username}</small></span><b>Iniciar →</b></button>)}
           </div>
         </section>
       </div>}
