@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { FormEvent, KeyboardEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -308,6 +309,17 @@ export function BetaMessagingWorkspace() {
 
   return (
     <main className="beta-messaging">
+      <aside className="beta-app-nav" aria-label="Navegação principal">
+        <Link href="/" className="beta-app-logo" aria-label="BEX, início">B</Link>
+        <nav>
+          <Link href="/" className="is-current" aria-current="page" title="Conversas"><span>▤</span><small>Conversas</small></Link>
+          <Link href="/grupos" title="Grupos"><span>♧</span><small>Grupos</small></Link>
+          <Link href="/colaboradores" title="Colaboradores"><span>♙</span><small>Equipe</small></Link>
+          <Link href="/departamentos" title="Departamentos"><span>▦</span><small>Setores</small></Link>
+          <Link href="/arquivos" title="Arquivos"><span>▥</span><small>Arquivos</small></Link>
+        </nav>
+        <div className="beta-app-nav-foot"><span className="beta-nav-status" />BETA</div>
+      </aside>
       <aside className="beta-sidebar">
         <div className="beta-brand"><span className="beta-brand-mark">B</span><div><strong>BEX</strong><small>Comunicação interna</small></div></div>
         <div className="beta-sidebar-heading"><span>CONVERSAS</span><button type="button" onClick={() => { setModalOpen(true); setNotice(""); }}>＋</button></div>
@@ -353,6 +365,13 @@ export function BetaMessagingWorkspace() {
         </> : <div className="beta-welcome"><span>✦</span><h1>Suas conversas, em um só lugar.</h1><p>Selecione uma conversa ou inicie uma nova com alguém da sua organização.</p><button type="button" onClick={() => setModalOpen(true)}>Iniciar conversa</button></div>}
       </section>
 
+      <nav className="beta-mobile-nav" aria-label="Navegação principal">
+        <Link href="/" className="is-current" aria-current="page"><span>▤</span><small>Conversas</small></Link>
+        <Link href="/grupos"><span>♧</span><small>Grupos</small></Link>
+        <Link href="/colaboradores"><span>♙</span><small>Equipe</small></Link>
+        <Link href="/departamentos"><span>▦</span><small>Setores</small></Link>
+        <Link href="/arquivos"><span>▥</span><small>Arquivos</small></Link>
+      </nav>
       {modalOpen && <div className="beta-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
         <section className="beta-modal" role="dialog" aria-modal="true" aria-labelledby="beta-modal-title">
           <header><div><span>NOVA CONVERSA</span><h2 id="beta-modal-title">Quem você quer chamar?</h2></div><button type="button" onClick={() => setModalOpen(false)} aria-label="Fechar">×</button></header>
