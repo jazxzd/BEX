@@ -64,7 +64,8 @@ export function BetaMessagingWorkspace() {
   const [error, setError] = useState("");
   const [realtimeStatus, setRealtimeStatus] = useState("connecting");
   const [mobileChat, setMobileChat] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messageAreaRef = useRef<HTMLDivElement>(null);
+  const lastRenderedMessageIdRef = useRef<string | null>(null);
   const activeIdRef = useRef("");
 
   const active = inbox.find((item) => item.id === activeId) ?? null;
@@ -132,7 +133,6 @@ export function BetaMessagingWorkspace() {
     const rows = ((data ?? []) as MessageRow[]).reverse();
     setMessages(rows.map((row) => ({ ...row, mine: row.sender_id === uid })));
     setHasOlder(rows.length === 50);
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ block: "end" }));
   }, [supabase]);
 
   useEffect(() => {
@@ -170,6 +170,20 @@ export function BetaMessagingWorkspace() {
   }, [loadInbox, router, supabase]);
 
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+  // Scroll only when the newest message changes. Older-page pagination prepends
+  // rows but keeps the last message ID, so it will not yank the reader to the bottom.
+  useEffect(() => {
+    const newestMessage = messages[messages.length - 1];
+    const newestId = newestMessage?.id ?? null;
+    if (!newestId || newestId === lastRenderedMessageIdRef.current) return;
+    lastRenderedMessageIdRef.current = newestId;
+    const frame = requestAnimationFrame(() => {
+      const area = messageAreaRef.current;
+      if (area) area.scrollTo({ top: area.scrollHeight, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [messages]);
+
 
   useEffect(() => {
     if (!activeId || !userId) {
@@ -200,7 +214,6 @@ export function BetaMessagingWorkspace() {
         setInbox((current) => current.map((item) => item.id === row.conversation_id
           ? { ...item, preview: row.body, updatedAt: row.created_at }
           : item).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
-        requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }));
       })
       .subscribe((status) => {
         setRealtimeStatus(status === "SUBSCRIBED" ? "connected" : status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED" ? "disconnected" : "connecting");
@@ -279,7 +292,6 @@ export function BetaMessagingWorkspace() {
       ? { ...item, preview: row.body, updatedAt: row.created_at }
       : item).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
     setDraft("");
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }));
   }
 
   async function loadOlder() {
@@ -346,7 +358,7 @@ export function BetaMessagingWorkspace() {
             <div><strong>{active.name}</strong><small>@{active.username || "colaborador"}</small></div>
             <span className={"beta-live-indicator " + realtimeStatus}>{realtimeStatus === "connected" ? "Conectado" : realtimeStatus === "disconnected" ? "Reconectando…" : "Conectando…"}</span>
           </header>
-          <div className="beta-message-area">
+          <div ref={messageAreaRef} className="beta-message-area">
             {messagesLoading && <p className="beta-muted beta-center">Carregando histórico…</p>}
             {!messagesLoading && hasOlder && <button type="button" className="beta-load-older" onClick={() => void loadOlder()} disabled={olderLoading}>{olderLoading ? "Carregando…" : "Carregar mensagens anteriores"}</button>}
             {!messagesLoading && messages.length === 0 && <div className="beta-empty-chat"><span>✦</span><h2>Comece a conversa</h2><p>Envie uma mensagem para {active.name}. Ela ficará disponível no histórico desta conversa.</p></div>}
@@ -355,7 +367,6 @@ export function BetaMessagingWorkspace() {
               const showDay = !previous || new Date(previous.created_at).toDateString() !== new Date(item.created_at).toDateString();
               return <div key={item.id}>{showDay && <div className="beta-day-divider"><span>{formatDay(item.created_at)}</span></div>}<div className={"beta-message-row" + (item.mine ? " mine" : "")}><div className="beta-bubble"><p>{item.body}</p><time>{formatTime(item.created_at)}{item.mine ? " · Enviada" : ""}</time></div></div></div>;
             })}
-            <div ref={bottomRef} />
           </div>
           <form className="beta-composer" onSubmit={sendMessage}>
             <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={onComposerKeyDown} rows={1} maxLength={4000} placeholder="Escreva uma mensagem… (Enter para enviar)" aria-label="Escreva uma mensagem" />
